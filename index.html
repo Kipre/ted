@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+        <link href="style.css" rel="stylesheet">
+    </head>
+    <body>
+        <ted-editor id='ted'>customElements.define('ted-line', Line);
+customElements.define('ted-editor', Ted);
+
+function updateStyle(elem) {
+    const shadow = elem.shadowRoot;
+    shadow.querySelector('style').textContent = `
+    div {
+      width: ${elem.getAttribute('l')}px;
+      height: ${elem.getAttribute('l')}px;
+      background-color: ${elem.getAttribute('c')};
+    }
+  `;
+}</ted-editor>
+    </body>
+        <script src="main.js"></script>
+</html>
+
+
+<div class="line-container">
+    <span class="number"><span>
+    <div class="line"></div>
+</div>

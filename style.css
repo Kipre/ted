@@ -1,0 +1,40 @@
+html {
+    font-family: 'JetBrains Mono', monospace;
+    height: 100%;
+}
+
+ted-editor {
+    cursor: text;
+}
+
+body {
+    height: 100%;
+    margin: 0 0 0 50px;
+    border-left: solid 1px;
+}
+
+.line-container {
+    clear: both;
+}
+
+.number {
+    float: left;
+    width: 18mm;
+    margin-left: -20mm;
+    text-align: right;
+}
+
+.line {
+    /* float: left; */
+    /* font-family: monospace; */
+    white-space: pre;
+    width: 99%;
+    padding-left: 1px;
+}
+
+ted-cursor {
+    position: absolute;
+    width: 2px;
+    height: 21px;
+    background: #000000;
+}
