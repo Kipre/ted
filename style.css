@@ -4,6 +4,8 @@ html {
 }
 
 ted-editor {
+    display: inline-block;
+    counter-reset: line;
     cursor: text;
 }
 
@@ -13,28 +15,45 @@ body {
     border-left: solid 1px;
 }
 
-.line-container {
-    clear: both;
+ted-line {
+    pointer-events: none;
+    white-space: pre;
+    width: 99%;
+    padding-left: 1px;
+    float: left;
 }
 
-.number {
+ted-cursor {
+    pointer-events: none;
+    position: absolute;
+    width: 2px;
+    height: 21px;
+    background: #000000;
+}
+
+ted-line::before {
+    counter-increment: line;
+    content: counter(line);
     float: left;
     width: 18mm;
     margin-left: -20mm;
     text-align: right;
 }
 
-.line {
-    /* float: left; */
-    /* font-family: monospace; */
-    white-space: pre;
-    width: 99%;
-    padding-left: 1px;
-}
+@media (prefers-color-scheme: dark) {
+    html {
+        background: #333;
+    }
 
-ted-cursor {
-    position: absolute;
-    width: 2px;
-    height: 21px;
-    background: #000000;
+    ted-editor {
+        color: #ddd;
+    }
+
+    ted-cursor {
+        background : #ddd;
+    }
+
+    ted-line::before {
+        color: #736f6f;
+    }
 }

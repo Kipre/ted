@@ -10,8 +10,13 @@ class Cursor extends HTMLElement {
     constructor(line, char) {
         super();
 
+        this.update(line, char);
+    }
+
+    update(line, char) {
         this.setAttribute('line', line);
         this.setAttribute('char', char);
+        this.hidden = false;
     }
 
     get line() {
@@ -22,15 +27,17 @@ class Cursor extends HTMLElement {
         return parseInt(this.getAttribute('char'));
     }
 
-    set char(val) {
-        this.setAttribute('char', val);
-    }
-
     set line(val) {
-        this.setAttribute('char', val);
+        return this.setAttribute('line', val);
+    }
+    
+    set char(val) {
+        return this.setAttribute('char', val);
     }
 
-    connectedCallback() {}
+    get pos() {
+        return [parseInt(this.getAttribute('line')), parseInt(this.getAttribute('char'))];
+    }
 
     attributeChangedCallback(name, oldValue, newValue) {
         if (name == 'line') {
@@ -39,97 +46,69 @@ class Cursor extends HTMLElement {
             this.style.left = `${51 + newValue * lineWidth}px`;
         }
     }
+
+    matches(other) {
+        return this.getAttribute('line') == other.getAttribute('line') && this.getAttribute('char') == other.getAttribute('char');
+    }
+
+    isToTheLeft(other) {
+        return this.getAttribute('line') == other.getAttribute('line') && this.getAttribute('char') < other.getAttribute('char');
+    }
 }
 
 class Line extends HTMLElement {
 
-    static get observedAttributes() {
-        return ['number'];
-    }
-
-    constructor(number, content) {
+    constructor(content) {
         super();
 
-        this.lineContent = content;
-
-        this.innerHTML = `
-            <span class="number"></span>
-            <div class="line">${content} </div>`;
-
-        this.line = this.querySelector('.line');
-        this.setAttribute('number', number);
-
-        this.onclick = (e)=>{
-            e.preventDefault();
-            const obsChar = Math.round(e.offsetX / lineWidth);
-            const char = obsChar > this.content.length ? this.content.length : obsChar;
-            const line = this.getAttribute('number');
-            if (!e.ctrlKey) {
-                const [cursor,...garbage] = this.parentElement.cursors;
-                cursor.setAttribute('char', char);
-                cursor.setAttribute('line', line);
-                cursor.hidden = false;
-                garbage.forEach((c)=>{
-                    c.remove();
-                }
-                );
-            } else {
-                for (const c of this.parentElement.cursors) {
-                    if (c.getAttribute("line") == line && c.getAttribute('char') == char) {
-                        return;
-                    }
-                }
-                this.parentElement.appendChild(new Cursor(line,char));
-            }
-        }
+        this.innerHTML = `${content}`;
     }
 
     get content() {
-        return this.line.innerText.slice(0, -1);
+        return this.textContent;
     }
 
-    set content(string) {
-        this.line.innerText = string + " ";
+    set content(val) {
+        this.innerHTML = val;
     }
 
-    insert(i, character) {
-        this.content = this.line.innerText.slice(0, i) + character + this.line.innerText.slice(i);
-    }
-
-    backspace(i) {
-        this.content = this.line.innerText.slice(0, i - 1) + this.line.innerText.slice(i);
-    }
-
-    connectedCallback() {}
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name == 'number') {
-            this.querySelector('span').textContent = `${parseInt(newValue) + 1}`;
-        }
+    insert(i, key, decalage = 0) {
+        const oldText = this.content;
+        this.content = oldText.slice(0, i) + key + oldText.slice(i + decalage);
     }
 }
 
 class Ted extends HTMLElement {
 
-    static get observedAttributes() {
-        return ['l', 'c'];
-    }
-
     constructor() {
         super();
 
-        const initText = this.textContent;
+        const text = this.textContent
         this.textContent = "";
 
+        for (const line of text.split('\n')) {
+            this.appendChild(new Line(line));
+        }
+
         this.appendChild(new Cursor(0,0));
-        window.setInterval(this.blink, 500);
+        this.interval = window.setInterval(this.blink, 500);
 
-        this.lines = [];
+        document.body.onclick = (e)=>{
+            // click: cursor move
+            const lines = this.lines;
+            let char = Math.round(e.offsetX / lineWidth);
+            let line = Math.round((e.offsetY / lineHeight) - 0.4);
+            line = Math.min(line, lines.length - 1);
+            char = Math.min(char, lines[line].content.length);
 
-        for (const [i,line] of initText.split('\n').entries()) {
-            const newLine = new Line(i,line)
-            this.appendChild(newLine);
-            this.lines.push(newLine);
+            if (e.ctrlKey) {
+                this.appendChild(new Cursor(line,char));
+                this.removeDuplicateCursors();
+            } else {
+                const [cursor,...garbage] = this.cursors;
+                cursor.update(line, char);
+                garbage.forEach((c)=>c.remove());
+            }
         }
 
         document.onkeydown = (e)=>{
@@ -137,6 +116,10 @@ class Ted extends HTMLElement {
                 this.input(e.key);
             } else if (e.key == 'Backspace') {
                 this.backspace();
+            } else if (e.key == 'Enter') {
+                this.lineBreak();
+            } else {
+                console.log(e.key);
             }
         }
     }
@@ -148,53 +131,78 @@ class Ted extends HTMLElement {
             others.forEach((c)=>{
                 c.hidden = first.hidden;
             }
-            )
+            );
         }
+    }
+
+    get lines() {
+        return this.querySelectorAll('ted-line');
     }
 
     get cursors() {
-        return this.querySelectorAll('ted-cursor')
+        return this.querySelectorAll('ted-cursor');
+    }
+
+    async removeDuplicateCursors() {
+        const cursors = this.querySelectorAll('ted-cursor');
+        for (let i = 1; i < cursors.length; i++) {
+            for (let j = 0; j < i; j++) {
+                if (cursors[i].matches(cursors[j])) {
+                    cursors[j].remove();
+                }
+            }
+        }
     }
 
     input(key) {
+        const lines = this.lines;
         this.cursors.forEach((c)=>{
-            this.lines[c.line].insert(c.char, key);
+            lines[c.line].insert(c.char, key);
             c.char += 1;
-        }
-        )
+        });
     }
 
     backspace() {
-        this.cursors.forEach((c)=>{
+        const [lines, cursors] = [this.lines, this.cursors];
+        cursors.forEach((c)=>{
             if (c.char == 0 && c.line != 0) {
-                c.char = this.lines[c.line].content.length;
+                // linebreak
                 c.line -= 1;
-                this.lines[c.line].content += this.lines[c.line + 1].content
-                this.removeLine(c.line);
+                c.char = lines[c.line].content.length;
+                lines[c.line].content += lines[c.line + 1].content;
+                lines[c.line + 1].remove();
             } else if (c.char != 0) {
-                this.lines[c.line].backspace(c.char);
+                // normal situation
+                lines[c.line].insert(c.char-1, "", 1);
                 c.char -= 1;
+                // TODO: find a better method
+                cursors.forEach((k) => {
+                    if (c.isToTheLeft(k)) {
+                        k.char -= 1;
+                    }
+                });
             }
-        }
-        )
+            c.hidden = false;
+        })
+        this.removeDuplicateCursors();
     }
 
-    removeLine(i) {
-        this.lines[i].remove();
-        this.lines = [...this.lines.slice(0, i- 1), ...this.lines.slice(i)];
-        this.lines.forEach((l,i)=>{
-            l.setAttribute('number', i)
-        }
-        );
+    lineBreak() {
+        const [lines, cursors] = [this.lines, this.cursors];
+        cursors.forEach((c)=>{
+            const lineContent = lines[c.line].content;
+            lines[c.line].content = lineContent.slice(0, c.char);
+            c.line += 1;
+            this.insertBefore(new Line(lineContent.slice(c.char)), lines[c.line]);
+            c.char = 0;
+            c.hidden = false;
+        })
     }
 
-    connectedCallback() {}
-
-    disconnectedCallback() {}
-
-    adoptedCallback() {}
-
-    attributeChangedCallback(name, oldValue, newValue) {}
+    resetBlink() {
+        window.clearInterval(this.interval);
+        this.interval = window.setInterval(this.blink, 500);
+    }
 }
 
 customElements.define('ted-cursor', Cursor);
