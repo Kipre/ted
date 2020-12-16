@@ -7,6 +7,8 @@ ted-editor {
     display: inline-block;
     counter-reset: line;
     cursor: text;
+    height: 100%;
+    user-select: none;
 }
 
 body {
@@ -31,6 +33,13 @@ ted-cursor {
     background: #000000;
 }
 
+.selection {
+    background: #b7deff;
+    position: absolute;
+    z-index: -1;
+    border-radius: 3px;
+}
+
 ted-line::before {
     counter-increment: line;
     content: counter(line);
@@ -50,10 +59,17 @@ ted-line::before {
     }
 
     ted-cursor {
-        background : #ddd;
+        background : #fff;
     }
 
     ted-line::before {
         color: #736f6f;
     }
+}
+
+/* DEBUG */
+
+ted-cursor {
+    white-space: nowrap;
+    color: red;
 }
