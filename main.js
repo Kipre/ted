@@ -1,68 +1,6 @@
 const lineHeight = 21;
 const lineWidth = 9.6;
 
-class Cursor extends HTMLElement {
-
-    static get observedAttributes() {
-        return ['line', 'char'];
-    }
-
-    constructor(line, char) {
-        super();
-
-        this.update(line, char);
-    }
-
-    update(line, char) {
-        this.setAttribute('line', line);
-        this.setAttribute('char', char);
-        this.hidden = false;
-    }
-
-    get line() {
-        return parseInt(this.getAttribute('line'));
-    }
-
-    get char() {
-        return parseInt(this.getAttribute('char'));
-    }
-
-    set line(val) {
-        return this.setAttribute('line', val);
-    }
-
-    set char(val) {
-        return this.setAttribute('char', val);
-    }
-
-    get pos() {
-        return [parseInt(this.getAttribute('line')), parseInt(this.getAttribute('char'))];
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name == 'line') {
-            this.style.top = `${newValue * lineHeight}px`
-        } else if (name == 'char') {
-            this.style.left = `${51 + newValue * lineWidth}px`;
-            // DEBUG code
-            this.textContent = `${this.char}`;
-        }
-        //             console.log(name, oldValue, newValue);
-    }
-
-    matches(other) {
-        return this.line == other.line && this.char == other.char;
-    }
-
-    isToTheLeft(other) {
-        return this.line == other.line && this.char < other.char;
-    }
-
-    higher(other) {
-        return this.line < other.line;
-    }
-}
-
 class Line extends HTMLElement {
 
     constructor(content) {
@@ -102,31 +40,19 @@ class Ted extends HTMLElement {
         this.appendChild(new Cursor(0,0));
         this.interval = window.setInterval(this.blink, 500);
 
-//         this.onclick = (e)=>{
-//             // click: cursor move
-//             const [line,char] = mousePosition(e);
-//             if (e.ctrlKey) {
-//                 this.appendChild(new Cursor(line,char));
-//                 this.removeDuplicateCursors();
-//             } else {
-//                 this.cursors.forEach((c)=>c.remove());
-//                 this.appendChild(new Cursor(line,char));
-//             }
-//         }
-
         this.onmousedown = (e)=>{
             const [line,char] = this.mousePosition(e);
             this.selections.forEach((s)=>s.remove());
-            this.selection = new Selection(line, char);
+            this.selection = new Selection(line,char);
             this.appendChild(this.selection);
         }
 
-        this.onmousemove = (e)=>{
+        window.addEventListener('mousemove', (e)=>{
             if (this.selection) {
                 const [line,char] = this.mousePosition(e);
                 this.selection.update(line, char);
             }
-        }
+        });
 
         this.onmouseup = (e)=>{
             this.selection = null;
@@ -175,6 +101,10 @@ class Ted extends HTMLElement {
 
     get cursors() {
         return this.querySelectorAll('ted-cursor');
+    }
+
+    get cursels() {
+        return this.querySelectorAll('ted-cursel');
     }
 
     get selections() {
@@ -268,8 +198,70 @@ class Ted extends HTMLElement {
     }
 }
 
+class Cursor extends HTMLElement {
+
+    static get observedAttributes() {
+        return ['line', 'char'];
+    }
+
+    constructor(line, char) {
+        super();
+
+        this.update(line, char);
+    }
+
+    update(line, char) {
+        this.setAttribute('line', line);
+        this.setAttribute('char', char);
+        this.hidden = false;
+    }
+
+    get line() {
+        return parseInt(this.getAttribute('line'));
+    }
+
+    get char() {
+        return parseInt(this.getAttribute('char'));
+    }
+
+    set line(val) {
+        return this.setAttribute('line', val);
+    }
+
+    set char(val) {
+        return this.setAttribute('char', val);
+    }
+
+    get pos() {
+        return [parseInt(this.getAttribute('line')), parseInt(this.getAttribute('char'))];
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name == 'line') {
+            this.style.top = `${newValue * lineHeight}px`
+        } else if (name == 'char') {
+            this.style.left = `${51 + newValue * lineWidth}px`;
+            // DEBUG code
+            this.textContent = `${this.char}`;
+        }
+        //             console.log(name, oldValue, newValue);
+    }
+
+    matches(other) {
+        return this.line == other.line && this.char == other.char;
+    }
+
+    isToTheLeft(other) {
+        return this.line == other.line && this.char < other.char;
+    }
+
+    higher(other) {
+        return this.line < other.line;
+    }
+}
+
 class Selection extends HTMLElement {
-    
+
     constructor(line, char) {
         super();
 
@@ -277,13 +269,12 @@ class Selection extends HTMLElement {
         this.setAttribute('endline', line);
         this.setAttribute('startchar', char);
         this.setAttribute('endchar', char);
+
+        this.render();
     }
 
     orderedPositions() {
-        const [sl, sc, el, ec] = [parseInt(this.getAttribute('startline')),
-                                  parseInt(this.getAttribute('startchar')),
-                                  parseInt(this.getAttribute('endline')), 
-                                  parseInt(this.getAttribute('endchar'))];
+        const [sl,sc,el,ec] = [parseInt(this.getAttribute('startline')), parseInt(this.getAttribute('startchar')), parseInt(this.getAttribute('endline')), parseInt(this.getAttribute('endchar'))];
         if (sl > el || (sl == el && sc > ec)) {
             return [el, ec, sl, sc];
         } else {
@@ -300,21 +291,101 @@ class Selection extends HTMLElement {
 
     render() {
         this.innerHTML = "";
-        const [sl, sc, el, ec] = this.orderedPositions();
-        for (let i=sl; i <= el; ++i) {
-            const startChar = i == sl ? sc : 0
-            const endChar = i == el ? ec : this.parentElement.lineLength(i) + 1;
-            const subSelection = document.createElement('div');
-            subSelection.classList.add('selection');
-            subSelection.style.width = `${(endChar - startChar) * lineWidth}px`;
-            subSelection.style.height = `${lineHeight}px`;
-            subSelection.style.top = `${i * lineHeight}px`;
-            subSelection.style.left = `${52 + startChar * lineWidth}px`;
-            this.appendChild(subSelection);
+        const [sl,sc,el,ec] = this.orderedPositions();
+        if (sl == el && sc == ec) {
+            this.addCursor(sl, sc);
+        } else {
+            for (let i = sl; i <= el; ++i) {
+                const startChar = i == sl ? sc : 0
+                const endChar = i == el ? ec : this.parentElement.lineLength(i) + 1;
+                this.addSubSelection(i, startChar, endChar);
+            }
         }
+    }
+
+    addCursor(line, char) {
+        const subSelection = document.createElement('div');
+        subSelection.classList.add('cursor');
+        subSelection.style.top = `${line * lineHeight}px`;
+        subSelection.style.left = `${51 + char * lineWidth}px`;
+        this.appendChild(subSelection);
+    }
+
+    addSubSelection(line, start, end) {
+        const subSelection = document.createElement('div');
+        subSelection.classList.add('selection');
+        subSelection.style.width = `${(end - start) * lineWidth}px`;
+        subSelection.style.height = `${lineHeight}px`;
+        subSelection.style.top = `${line * lineHeight}px`;
+        subSelection.style.left = `${52 + start * lineWidth}px`;
+        this.appendChild(subSelection);
     }
 }
 
+
+class Cursel extends HTMLElement {
+
+    constructor(line, char) {
+        super();
+
+        this.setAttribute('startline', line);
+        this.setAttribute('endline', line);
+        this.setAttribute('startchar', char);
+        this.setAttribute('endchar', char);
+
+        this.render();
+    }
+
+    orderedPositions() {
+        const [sl,sc,el,ec] = [parseInt(this.getAttribute('startline')), parseInt(this.getAttribute('startchar')), parseInt(this.getAttribute('endline')), parseInt(this.getAttribute('endchar'))];
+        if (sl > el || (sl == el && sc > ec)) {
+            return [el, ec, sl, sc];
+        } else {
+            return [sl, sc, el, ec];
+        }
+    }
+
+    update(line, char) {
+        this.setAttribute('endline', line);
+        this.setAttribute('endchar', char);
+
+        this.render();
+    }
+
+    render() {
+        this.innerHTML = "";
+        const [sl,sc,el,ec] = this.orderedPositions();
+        if (sl == el && sc == ec) {
+            this.addCursor(sl, sc);
+        } else {
+            for (let i = sl; i <= el; ++i) {
+                const startChar = i == sl ? sc : 0
+                const endChar = i == el ? ec : this.parentElement.lineLength(i) + 1;
+                this.addSubSelection(i, startChar, endChar);
+            }
+        }
+    }
+
+    addCursor(line, char) {
+        const subSelection = document.createElement('div');
+        subSelection.classList.add('cursor');
+        subSelection.style.top = `${line * lineHeight}px`;
+        subSelection.style.left = `${51 + char * lineWidth}px`;
+        this.appendChild(subSelection);
+    }
+
+    addSubSelection(line, start, end) {
+        const subSelection = document.createElement('div');
+        subSelection.classList.add('selection');
+        subSelection.style.width = `${(end - start) * lineWidth}px`;
+        subSelection.style.height = `${lineHeight}px`;
+        subSelection.style.top = `${line * lineHeight}px`;
+        subSelection.style.left = `${52 + start * lineWidth}px`;
+        this.appendChild(subSelection);
+    }
+}
+
+customElements.define('ted-cursel', Cursel);
 customElements.define('ted-cursor', Cursor);
 customElements.define('ted-selection', Selection);
 customElements.define('ted-line', Line);

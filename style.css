@@ -40,6 +40,14 @@ ted-cursor {
     border-radius: 3px;
 }
 
+.cursor {
+    pointer-events: none;
+    position: absolute;
+    width: 2px;
+    height: 21px;
+    background: #000000;
+}
+
 ted-line::before {
     counter-increment: line;
     content: counter(line);
