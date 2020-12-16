@@ -151,10 +151,9 @@ class Ted extends HTMLElement {
                     if (i == 0)
                         lines[sl].content = newLines[i];
                     else
-                        this.insertBefore(new Line(newLines[i]), lines[el + 1]);
+                       this.insertBefore(new Line(newLines[i]), lines[sl + i - 1].nextSibling);
                 }
                 const last = newLines[newLines.length - 1].length - tail.length;
-                console.log(sl + len, last, sl + len, last);
                 c.update(sl + len, last, sl + len, last);
                 for (const k of cursels) {
                     if (k !== c) {
@@ -241,8 +240,10 @@ class Cursel extends HTMLElement {
         if (c != 0) {
             this.update(l, c - 1);
         } else if (l != 0) {
-            this.update(l - 1, this.parentElement.lineLength(l-1));
+            this.update(l - 1, this.parentElement.lineLength(l - 1));
         }
+        const [nl,nc] = this.pos;
+        console.log(l, c, nl, nc)
     }
 
     addCursor(line, char) {
