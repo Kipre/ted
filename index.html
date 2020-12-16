@@ -6,18 +6,25 @@
         <link href="style.css" rel="stylesheet">
     </head>
     <body>
-        <ted-editor id='ted'>customElements.define('ted-line', Line);
-customElements.define('ted-editor', Ted);
+        <ted-editor id='ted'>const before = (l1,c1,l2,c2)=>{
+    return (l1 < l2) || (l1 == l2 && c1 < c2);
+}
 
-function updateStyle(elem) {
-    const shadow = elem.shadowRoot;
-    shadow.querySelector('style').textContent = `
-    div {
-      width: ${elem.getAttribute('l')}px;
-      height: ${elem.getAttribute('l')}px;
-      background-color: ${elem.getAttribute('c')};
+class Line extends HTMLElement {
+
+    constructor(content) {
+        super();
+
+        this.innerHTML = `${content}`;
     }
-  `;
+
+    get content() {
+        return this.textContent;
+    }
+
+    set content(val) {
+        this.innerHTML = val;
+    }
 }</ted-editor>
     </body>
     <script src="main.js"></script>
