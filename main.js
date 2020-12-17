@@ -1,5 +1,10 @@
-const lineHeight = 21;
-const lineWidth = 9.6;
+const testSpan = document.createElement('span');
+testSpan.innerHTML = 'a';
+document.body.appendChild(testSpan);
+const rect = testSpan.getBoundingClientRect();
+const lineHeight = rect.height;
+const lineWidth = rect.width;
+testSpan.remove();
 
 const before = (l1,c1,l2,c2)=>{
     return (l1 < l2) || (l1 == l2 && c1 < c2);
@@ -39,7 +44,7 @@ class Ted extends HTMLElement {
         this.appendChild(new Cursel(0,0));
         //         this.interval = window.setInterval(this.blink, 500);
 
-        this.onmousedown = (e)=>{
+        document.onmousedown = (e)=>{
             const [line,char] = this.mousePosition(e);
             if (!e.ctrlKey)
                 this.cursels.forEach((c)=>c.remove());
@@ -62,22 +67,32 @@ class Ted extends HTMLElement {
         );
 
         document.onkeydown = (e)=>{
-            if (!e.ctrlKey) {
-                if (e.key.length == 1) {
-                    this.input(e.key);
-                } else if (e.key == 'Backspace') {
-                    this.input('', -1);
-                } else if (e.key == 'Enter') {
-                    this.input('\n');
-                } else {
-                    console.log(e.key);
+            if (e.shiftKey) {
+                if (e.key.includes("Arrow")) {
+                    this.cursels.forEach(c=>c.movePart(e.key.slice(5).toLowerCase(), c.update.bind(c)));
                 }
-            } else {
+            } else if (e.ctrlKey) {
                 if (e.key == "s") {
                     e.preventDefault();
                     console.log(this.textContent);
+                } else if (e.key == "c") {
+                    this.querySelectorAll('ted-cursel')
+                    navigator.clipboard.writeText();
                 } else if (e.key == 'v') {
                     navigator.clipboard.readText().then(clipText=>this.input(clipText))
+                }
+            } else {
+                if (e.key.length == 1) {
+                    this.input(e.key);
+                } else if (e.key == 'Backspace') {
+                    this.cursors.forEach(c=>c.movePart('left', c.update.bind(c)));
+                    this.input('');
+                } else if (e.key == 'Enter') {
+                    this.input('\n');
+                } else if (e.key.includes("Arrow")) {
+                    this.cursels.forEach(c=>c.move(e.key.slice(5).toLowerCase()));
+                } else {
+                    console.log(e.key);
                 }
             }
         }
@@ -113,6 +128,14 @@ class Ted extends HTMLElement {
         return this.querySelectorAll('ted-cursel');
     }
 
+    get cursors() {
+        const result = [];
+        for (const c of this.querySelectorAll('ted-cursel'))
+            if (c.isCursor())
+                result.push(c);
+        return result;
+    }
+
     async fuseCursels() {
         const cursels = this.querySelectorAll('ted-cursel');
         for (let i = 1; i < cursels.length; i++) {
@@ -122,11 +145,9 @@ class Ted extends HTMLElement {
         }
     }
 
-    input(key, backspace=false) {
+    input(key) {
         const [lines,cursels] = [this.lines, this.cursels];
         cursels.forEach((c)=>{
-            if (backspace && c.isCursor())
-                c.preExpand();
             const [sl,sc,el,ec] = c.orderedPositions();
             let head, tail;
             for (let i = sl; i <= el; ++i) {
@@ -144,26 +165,30 @@ class Ted extends HTMLElement {
                 c.update(sl, sc + key.length, sl, sc + key.length);
                 for (const k of cursels) {
                     if (k !== c)
-                        k.adjust(el, ec, sc - ec + 1, sl - el);
+                        k.adjust(el, ec, sc - ec + key.length, sl - el);
                 }
             } else {
                 for (let i = 0; i <= len; ++i) {
                     if (i == 0)
                         lines[sl].content = newLines[i];
                     else
-                       this.insertBefore(new Line(newLines[i]), lines[sl + i - 1].nextSibling);
+                        this.insertBefore(new Line(newLines[i]), lines[sl + i - 1].nextSibling);
                 }
                 const last = newLines[newLines.length - 1].length - tail.length;
                 c.update(sl + len, last, sl + len, last);
                 for (const k of cursels) {
                     if (k !== c) {
-                        console.log('adjusting');
                         k.adjust(el, ec, sc - last, sl - el + len);
                     }
                 }
             }
         }
         );
+        this.fuseCursels();
+    }
+
+    nbLines() {
+        return this.querySelectorAll('ted-line').length;
     }
 
     lineLength(i) {
@@ -178,7 +203,7 @@ class Ted extends HTMLElement {
     mousePosition(e) {
         const lines = this.lines;
         const char = Math.round((e.srcElement == this ? e.offsetX : 0) / lineWidth);
-        const line = Math.round((e.offsetY / lineHeight) - 0.4);
+        const line = Math.min(Math.max(0, Math.round((e.offsetY / lineHeight) - 0.4)), lines.length - 1);
         return [Math.min(line, lines.length - 1), Math.min(char, lines[line].content.length)];
     }
 }
@@ -219,8 +244,16 @@ class Cursel extends HTMLElement {
         this.render();
     }
 
+    updateCursor(line, char) {
+        this.setAttribute('startline', line);
+        this.setAttribute('startchar', char);
+        this.setAttribute('line', line);
+        this.setAttribute('char', char);
+        this.render();
+    }
+
     isCursor() {
-        let[sl,sc,el,ec] = this.orderedPositions();
+        const [sl,sc,el,ec] = this.positions();
         return sl == el && sc == ec;
     }
 
@@ -243,7 +276,48 @@ class Cursel extends HTMLElement {
             this.update(l - 1, this.parentElement.lineLength(l - 1));
         }
         const [nl,nc] = this.pos;
-        console.log(l, c, nl, nc)
+    }
+
+    movePart(way, updateFunc) {
+        const [sl,sc,l,c] = this.positions();
+        const lastLine = this.parentElement.nbLines() - 1;
+        switch (way) {
+        case 'up':
+            l != 0 ? updateFunc(l - 1, Math.min(this.parentElement.lineLength(l - 1), c)) : updateFunc(0, 0);
+            break;
+        case 'down':
+            (l != lastLine) ? updateFunc(l + 1, Math.min(this.parentElement.lineLength(l + 1), c)) : updateFunc(lastLine, this.parentElement.lineLength(lastLine));
+            break;
+        case 'right':
+            const lastChar = this.parentElement.lineLength(l);
+            if (c == lastChar && l != lastLine)
+                updateFunc(l + 1, 0)
+            else if (l != lastLine)
+                updateFunc(l, c + 1);
+            break;
+        case "left":
+            if (c == 0 && l != 0)
+                updateFunc(l - 1, Math.max(this.parentElement.lineLength(l - 1), c));
+            else if (c != 0)
+                updateFunc(l, c - 1);
+            break;
+        default:
+            console.log(`unknown way ${way}`);
+        }
+    }
+
+    move(way) {
+        const lastLine = this.parentElement.nbLines() - 1;
+        if (this.isCursor()) {
+            this.movePart(way, this.updateCursor.bind(this));
+        } else {
+            const [sl,sc,el,ec] = this.orderedPositions();
+            if (way == "up" || way == "left") {
+                this.update(sl, sc, sl, sc);
+            } else if (way == 'down' || way == 'right') {
+                this.update(el, ec, el, ec);
+            }
+        }
     }
 
     addCursor(line, char) {
@@ -315,3 +389,15 @@ navigator.permissions.query({
     name: 'clipboard-read'
 });
 const editor = document.getElementById('ted');
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').then(function(registration) {
+      // Registration was successful
+      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+    }, function(err) {
+      // registration failed :(
+      console.log('ServiceWorker registration failed: ', err);
+    });
+  });
+}

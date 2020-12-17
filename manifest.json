@@ -1,0 +1,16 @@
+{
+  "short_name": "ted",
+  "name": "ted",
+  "theme_color": "#eb5252",
+  "background_color": "#000000",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/tedlogo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "index.html"
+}
