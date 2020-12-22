@@ -14,7 +14,7 @@ class Line extends HTMLElement {
 
     constructor(content) {
         super();
-        this.textContent = content;
+        this.content = content;
     }
 
     get content() {
@@ -22,7 +22,7 @@ class Line extends HTMLElement {
     }
 
     set content(val) {
-        this.innerText = val;
+        this.textContent = val;
     }
 }
 
@@ -34,7 +34,7 @@ class Ted extends HTMLElement {
         this.selection = null;
 
         const text = this.textContent;
-        this.textContent = "";
+        this.innerHTML = "";
 
         for (const line of text.split('\n'))
             this.appendChild(new Line(line));
@@ -47,7 +47,7 @@ class Ted extends HTMLElement {
             const cursels = this.cursels();
             let nextCursel;
             if (!e.ctrlKey)
-                cursels.forEach((c)=>c.remove());
+                cursels.forEach(c=>c.remove());
             else
                 // sorted insert
                 for (const c of cursels) {
@@ -57,7 +57,7 @@ class Ted extends HTMLElement {
                     }
                 }
             this.selection = new Cursel(line,char);
-//             this.selection.setAttribute("nb", this.cursels().length);
+            //             this.selection.setAttribute("nb", this.cursels().length);
             this.insertBefore(this.selection, nextCursel);
         }
 
@@ -66,20 +66,23 @@ class Ted extends HTMLElement {
                 const [line,char] = this.mousePosition(e);
                 this.selection.update(line, char);
             }
-        });
+        }
+        );
 
         window.addEventListener('mouseup', (e)=>{
             this.selection?.tighten();
             this.selection = null;
             this.fuseCursels();
-        });
+        }
+        );
 
         document.onkeydown = (e)=>{
             if (e.shiftKey) {
                 if (e.key.includes("Arrow")) {
                     this.cursels().forEach(c=>{
                         c.moveSelection(e.key.slice(5).toLowerCase());
-                    });
+                    }
+                    );
                 } else if (e.key.length == 1) {
                     this.input(e.key);
                 }
@@ -88,11 +91,18 @@ class Ted extends HTMLElement {
                     e.preventDefault();
                     console.log(this.textContent);
                 } else if (e.key == "c") {
-                    this.querySelectorAll('ted-cursel')
+                    this.querySelectorAll('ted-cursel');
                     navigator.clipboard.writeText();
                 } else if (e.key == 'v') {
                     console.log()
-                    navigator.clipboard.readText().then(clipText=>{this.input(clipText)})
+                    navigator.clipboard.readText().then(clipText=>{
+                        console.log(clipText);
+                        clipText = clipText.replace(/(\s)\n/g, '\n');
+                        for (const line of clipText.split('\n'))
+                            console.log(line[line.length - 1])
+                        this.input(clipText);
+                    }
+                    );
                 }
             } else {
                 if (e.key.length == 1) {
@@ -116,10 +126,6 @@ class Ted extends HTMLElement {
         //             window.clearInterval(this.interval);
         //         }
         //         );
-
-        document.addEventListener('paste', e=>{
-            console.log('paste', e);
-        });
     }
 
     get blink() {
@@ -338,7 +344,7 @@ class Cursel extends HTMLElement {
         default:
             console.log(`unknown way ${way}`);
         }
-//         console.log(this.l, this.c, this.tl, this.tc, this.hc);
+        //         console.log(this.l, this.c, this.tl, this.tc, this.hc);
     }
 
     moveSelection(way) {
