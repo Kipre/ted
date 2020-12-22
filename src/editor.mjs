@@ -1,5 +1,6 @@
 import {Cursel, before} from './cursel.mjs';
 import {Line} from './line.mjs';
+import {Controls} from './controls.mjs';
 
 export class Ted extends HTMLElement {
 
@@ -53,9 +54,16 @@ export class Ted extends HTMLElement {
         }
         );
 
-        document.onkeydown = (e)=>{
+        document.addEventListener('keydown', (e)=>{
+            if (e.defaultPrevented)
+                return;
             e.preventDefault();
-            if (e.shiftKey) {
+            if (e.shiftKey && e.ctrlKey) {
+                if (e.key == "P") {
+                    this.querySelector('ted-controls')?.remove();
+                    this.appendChild(new Controls());
+                }
+            } else if (e.shiftKey) {
                 if (e.key.includes("Arrow")) {
                     this.cursels().forEach(c=>{
                         c.moveSelection(e.key.slice(5).toLowerCase());
@@ -65,8 +73,10 @@ export class Ted extends HTMLElement {
                     this.input(e.key);
                 }
             } else if (e.ctrlKey) {
-                if (e.key == "s") {
-                    console.log(this.textContent);
+                if (e.key == "r") {
+                    // developement
+                    document.location.reload(true);
+                } else if (e.key == "s") {
                     window.showOpenFilePicker();
                 } else if (e.key == "c") {
                     const firstSelection = this.querySelector('ted-cursel');
@@ -89,11 +99,14 @@ export class Ted extends HTMLElement {
                 } else if (e.key.includes("Arrow")) {
                     this.cursels().forEach(c=>c.moveCursor(e.key.slice(5).toLowerCase()));
                     this.fuseCursels();
+                } else if (e.key == "Escape") {
+                    this.querySelector('ted-controls')?.remove();
                 } else {
                     console.log(e.key);
                 }
             }
         }
+        );
 
         //         window.addEventListener('blur', ()=>{
         //             this.cursels.forEach((c)=>c.remove());
@@ -101,10 +114,10 @@ export class Ted extends HTMLElement {
         //         }
         //         );
 
-        window.addEventListener('scroll', (e)=>{
-            console.log(window.scrollY, document.height);
-        }
-        );
+        //         window.addEventListener('scroll', (e)=>{
+        //             console.log(window.scrollY, document.height);
+        //         }
+        //         );
     }
 
     get blink() {
