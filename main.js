@@ -14,7 +14,7 @@ class Line extends HTMLElement {
 
     constructor(content) {
         super();
-        this.innerHTML = `${content}`;
+        this.textContent = content;
     }
 
     get content() {
@@ -22,7 +22,7 @@ class Line extends HTMLElement {
     }
 
     set content(val) {
-        this.innerHTML = val;
+        this.innerText = val;
     }
 }
 
@@ -33,12 +33,11 @@ class Ted extends HTMLElement {
 
         this.selection = null;
 
-        const text = this.textContent
+        const text = this.textContent;
         this.textContent = "";
 
-        for (const line of text.split('\n')) {
+        for (const line of text.split('\n'))
             this.appendChild(new Line(line));
-        }
 
         this.appendChild(new Cursel(0,0));
         //         this.interval = window.setInterval(this.blink, 500);
@@ -58,7 +57,7 @@ class Ted extends HTMLElement {
                     }
                 }
             this.selection = new Cursel(line,char);
-            this.selection.setAttribute("nb", this.cursels().length);
+//             this.selection.setAttribute("nb", this.cursels().length);
             this.insertBefore(this.selection, nextCursel);
         }
 
@@ -67,23 +66,22 @@ class Ted extends HTMLElement {
                 const [line,char] = this.mousePosition(e);
                 this.selection.update(line, char);
             }
-        }
-        );
+        });
 
         window.addEventListener('mouseup', (e)=>{
             this.selection?.tighten();
             this.selection = null;
             this.fuseCursels();
-        }
-        );
+        });
 
         document.onkeydown = (e)=>{
             if (e.shiftKey) {
                 if (e.key.includes("Arrow")) {
                     this.cursels().forEach(c=>{
                         c.moveSelection(e.key.slice(5).toLowerCase());
-                    }
-                    );
+                    });
+                } else if (e.key.length == 1) {
+                    this.input(e.key);
                 }
             } else if (e.ctrlKey) {
                 if (e.key == "s") {
@@ -93,13 +91,14 @@ class Ted extends HTMLElement {
                     this.querySelectorAll('ted-cursel')
                     navigator.clipboard.writeText();
                 } else if (e.key == 'v') {
-                    navigator.clipboard.readText().then(clipText=>this.input(clipText))
+                    console.log()
+                    navigator.clipboard.readText().then(clipText=>{this.input(clipText)})
                 }
             } else {
                 if (e.key.length == 1) {
                     this.input(e.key);
                 } else if (e.key == 'Backspace') {
-                    this.cursors.forEach(c=>c.moveSelection('left', c.update.bind(c)));
+                    this.cursors().forEach(c=>c.moveSelection('left', c.update.bind(c)));
                     this.input('');
                 } else if (e.key == 'Enter') {
                     this.input('\n');
@@ -120,8 +119,7 @@ class Ted extends HTMLElement {
 
         document.addEventListener('paste', e=>{
             console.log('paste', e);
-        }
-        );
+        });
     }
 
     get blink() {
@@ -135,10 +133,6 @@ class Ted extends HTMLElement {
         }
     }
 
-    get lines() {
-        return this.querySelectorAll('ted-line');
-    }
-
     lines() {
         return this.querySelectorAll('ted-line');
     }
@@ -147,7 +141,7 @@ class Ted extends HTMLElement {
         return this.querySelectorAll('ted-cursel');
     }
 
-    get cursors() {
+    cursors() {
         const result = [];
         for (const c of this.querySelectorAll('ted-cursel'))
             if (c.isCursor())
@@ -181,15 +175,16 @@ class Ted extends HTMLElement {
             const len = newLines.length - 1;
             lines[sl].content = newLines[0];
             for (let i = 1; i <= len; ++i)
-                this.insertBefore(new Line(newLines[i]), lines[sl + i - 1].nextSibling);
+                this.insertBefore(new Line(newLines[i]), lines[sl + i - 1]?.nextSibling);
             const last = newLines[newLines.length - 1].length - tail.length;
             c.toCursor(sl + len, last);
             for (const k of cursels) {
                 if (k === c)
                     break;
-                k.adjust(el, ec, sc - last - 1, sl - el + len);
+                k.adjust(el, ec, sl - el + len, last - ec);
             }
-        });
+        }
+        );
         this.fuseCursels();
     }
 
@@ -264,7 +259,7 @@ class Cursel extends HTMLElement {
 
         this.querySelectorAll('.selection').forEach(a=>a.remove());
 
-        if (this.tl && this.parentElement) {
+        if (this.tl !== null && this.parentElement) {
             const [sl,sc,el,ec] = this.orderedPositions();
             const lines = this.parentElement.lines();
             for (let i = sl; i <= el; ++i) {
@@ -343,7 +338,7 @@ class Cursel extends HTMLElement {
         default:
             console.log(`unknown way ${way}`);
         }
-        console.log(this.l, this.c, this.tl, this.tc, this.hc);
+//         console.log(this.l, this.c, this.tl, this.tc, this.hc);
     }
 
     moveSelection(way) {
@@ -367,9 +362,9 @@ class Cursel extends HTMLElement {
 
     adjust(line, char, deltaLine, deltaChar) {
         if (this.l == line && this.c >= char)
-            this.c += deltaLine;
+            this.c += deltaChar;
         if (this.l >= line)
-            this.l += deltaChar;
+            this.l += deltaLine;
         this.render();
     }
 
@@ -417,14 +412,14 @@ navigator.permissions.query({
 });
 const editor = document.getElementById('ted');
 
-if ('serviceWorker'in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js').then(function(registration) {
-            // Registration was successful
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        }, function(err) {
-            // registration failed :(
-            console.log('ServiceWorker registration failed: ', err);
-        });
-    });
-}
+// if ('serviceWorker'in navigator) {
+//     window.addEventListener('load', function() {
+//         navigator.serviceWorker.register('/sw.js').then(function(registration) {
+//             // Registration was successful
+//             console.log('ServiceWorker registration successful with scope: ', registration.scope);
+//         }, function(err) {
+//             // registration failed :(
+//             console.log('ServiceWorker registration failed: ', err);
+//         });
+//     });
+// }
