@@ -1,10 +1,11 @@
-import {Ted} from './editor.mjs';
+import {Ted} from './editor.js';
 
-navigator.permissions.query({
-    name: 'clipboard-read'
-});
+// navigator.permissions.query({
+//     name: 'clipboard-read'
+// });
 
 const editor = document.getElementById('ted');
+
 
 // if ('serviceWorker'in navigator) {
 //     window.addEventListener('load', function() {

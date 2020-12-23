@@ -4,12 +4,12 @@
 }
 
 html {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 100;
     min-height: 100%;
 }
 
 ted-editor {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 100;
     min-height: 100%;
     margin: 0 0 0 50px;
     border-left: solid #9e9e9e 1px;
@@ -27,6 +27,8 @@ body {
 }
 
 ted-line {
+/*     content-visibility: auto;
+    contain-intrinsic-size: 0 30px; */
     pointer-events: none;
     white-space: pre;
     width: 99%;
@@ -37,8 +39,11 @@ ted-line {
 ted-controls {
     position: absolute;
     display: block;
-    width: 100%;
-    height: 100%;
+    top: 3em;
+    left: 30%;
+    width: 30%;
+    right: 50%;
+    /* height: 100%; */
 }
 
 /* ted-cursel {

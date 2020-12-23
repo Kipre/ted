@@ -1,23 +1,28 @@
-import {Cursel, before} from './cursel.mjs';
-import {Line} from './line.mjs';
-import {Controls} from './controls.mjs';
+import {Cursel, before} from './cursel.js';
+import {Line} from './line.js';
+import {Controls} from './controls.js';
+import {fetchMode} from './codemirror.js';
 
 export class Ted extends HTMLElement {
 
     constructor(lineWidth, lineHeight) {
         super();
 
-        this.computeCharacterSize();
-
-        this.selection = null;
 
         const text = this.textContent;
-        this.innerHTML = "";
+        this.options = {
+            tabSize: 4
+        }
 
-        for (const line of text.split('\n'))
-            this.appendChild(new Line(line));
+        fetchMode('python').then(()=>{
+            this.mode = CodeMirror.modeFunc({
+                indentUnit: this.options.tabSize
+            }, {
+                statementIndent: 2
+            });
+            this.insertText(text);}
+        );
 
-        this.appendChild(new Cursel(0,0));
         //         this.interval = window.setInterval(this.blink, 500);
 
         document.onmousedown = (e)=>{
@@ -54,59 +59,9 @@ export class Ted extends HTMLElement {
         }
         );
 
-        document.addEventListener('keydown', (e)=>{
-            if (e.defaultPrevented)
-                return;
-            e.preventDefault();
-            if (e.shiftKey && e.ctrlKey) {
-                if (e.key == "P") {
-                    this.querySelector('ted-controls')?.remove();
-                    this.appendChild(new Controls());
-                }
-            } else if (e.shiftKey) {
-                if (e.key.includes("Arrow")) {
-                    this.cursels().forEach(c=>{
-                        c.moveSelection(e.key.slice(5).toLowerCase());
-                    }
-                    );
-                } else if (e.key.length == 1) {
-                    this.input(e.key);
-                }
-            } else if (e.ctrlKey) {
-                if (e.key == "r") {
-                    // developement
-                    document.location.reload(true);
-                } else if (e.key == "s") {
-                    window.showOpenFilePicker();
-                } else if (e.key == "c") {
-                    const firstSelection = this.querySelector('ted-cursel');
-                    navigator.clipboard.writeText(this.textFromSelection(firstSelection));
-                } else if (e.key == 'v') {
-                    navigator.clipboard.readText().then(clipText=>{
-                        clipText = clipText.replace(/\s\n/g, '\n');
-                        this.input(clipText);
-                    }
-                    );
-                }
-            } else {
-                if (e.key.length == 1) {
-                    this.input(e.key);
-                } else if (e.key == 'Backspace') {
-                    this.cursors().forEach(c=>c.moveSelection('left', c.update.bind(c)));
-                    this.input('');
-                } else if (e.key == 'Enter') {
-                    this.input('\n');
-                } else if (e.key.includes("Arrow")) {
-                    this.cursels().forEach(c=>c.moveCursor(e.key.slice(5).toLowerCase()));
-                    this.fuseCursels();
-                } else if (e.key == "Escape") {
-                    this.querySelector('ted-controls')?.remove();
-                } else {
-                    console.log(e.key);
-                }
-            }
-        }
-        );
+        document.addEventListener('keydown', this.keyDown.bind(this));
+
+        window.addEventListener('resize', ()=>this.computeCharacterSize());
 
         //         window.addEventListener('blur', ()=>{
         //             this.cursels.forEach((c)=>c.remove());
@@ -172,6 +127,15 @@ export class Ted extends HTMLElement {
         }
     }
 
+    insertText(text) {
+            this.innerHTML = "";
+            this.computeCharacterSize();
+
+            for (const line of text.split('\n')) {
+                this.appendChild(new Line(line));
+            }
+    }
+
     input(key) {
         const [lines,cursels] = [this.lines(), this.cursels()];
         cursels.forEach((c)=>{
@@ -225,11 +189,69 @@ export class Ted extends HTMLElement {
     computeCharacterSize() {
         const testSpan = document.createElement('span');
         testSpan.innerHTML = 'a';
-        document.body.appendChild(testSpan);
+        this.appendChild(testSpan);
         const rect = testSpan.getBoundingClientRect();
         this.lineHeight = rect.height;
         this.lineWidth = rect.width;
         testSpan.remove();
+    }
+
+    keyDown(e) {
+        if (e.defaultPrevented)
+            return;
+        if (e.shiftKey && e.ctrlKey) {
+            if (e.key == "P") {
+                e.preventDefault();
+                this.querySelector('ted-controls')?.remove();
+                this.appendChild(new Controls());
+            } else if (e.key == 'F') {}
+        } else if (e.shiftKey) {
+            e.preventDefault();
+            if (e.key.includes("Arrow")) {
+                this.cursels().forEach(c=>{
+                    c.moveSelection(e.key.slice(5).toLowerCase());
+                }
+                );
+            } else if (e.key.length == 1) {
+                this.input(e.key);
+            }
+        } else if (e.ctrlKey) {
+            e.preventDefault();
+            if (e.key == "r") {
+                // developement
+                document.location.reload(true);
+            } else if (e.key == "s") {
+                window.showOpenFilePicker();
+            } else if (e.key == "c") {
+                const firstSelection = this.querySelector('ted-cursel');
+                navigator.clipboard.writeText(this.textFromSelection(firstSelection));
+            } else if (e.key == 'v') {
+                navigator.clipboard.readText().then(clipText=>{
+                    clipText = clipText.replace(/\s\n/g, '\n');
+                    this.input(clipText);
+                }
+                );
+            }
+        } else {
+            e.preventDefault();
+            if (e.key.length == 1) {
+                this.input(e.key);
+            } else if (e.key == 'Backspace') {
+                this.cursors().forEach(c=>c.moveSelection('left', c.update.bind(c)));
+                this.input('');
+            } else if (e.key == 'Tab') {
+                this.input(' '.repeat(this.options.tabSize));
+            } else if (e.key == 'Enter') {
+                this.input('\n');
+            } else if (e.key.includes("Arrow")) {
+                this.cursels().forEach(c=>c.moveCursor(e.key.slice(5).toLowerCase()));
+                this.fuseCursels();
+            } else if (e.key == "Escape") {
+                this.querySelector('ted-controls')?.remove();
+            } else {
+                console.log(e.key);
+            }
+        }
     }
 }
 

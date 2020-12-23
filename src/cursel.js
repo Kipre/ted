@@ -21,9 +21,9 @@ export class Cursel extends HTMLElement {
         this.cursor.classList.add('cursor');
         this.appendChild(this.cursor);
     }
+    
     connectedCallback() {
         this.render();
-        ;
     }
 
     isCursor() {
@@ -49,8 +49,8 @@ export class Cursel extends HTMLElement {
     }
 
     render() {
-        this.cursor.style.top = `${this.l * this.parentElement?.lineHeight}px`;
-        this.cursor.style.left = `${51 + this.c * this.parentElement?.lineWidth}px`;
+        this.cursor.style.top = `${this.l * this.parentElement.lineHeight}px`;
+        this.cursor.style.left = `${51 + this.c * this.parentElement.lineWidth}px`;
 
         this.querySelectorAll('.selection').forEach(a=>a.remove());
 

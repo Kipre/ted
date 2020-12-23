@@ -4,6 +4,7 @@
     <head>
         <meta name="theme-color" content="#317EFB"/>
         <link href="style.css" rel="stylesheet">
+        <link href="src/monokai.css" rel="stylesheet">
         <link href="manifest.json" rel="manifest">
     </head>
     <body>
@@ -28,5 +29,20 @@ class Line extends HTMLElement {
     }
 }</ted-editor>
     </body>
-    <script src="src/main.mjs" type="module"></script>
+    <script>
+
+// dummy class to fetch mode info
+class cm {
+    defineMode(mode, func) {
+        this.modeFunc = func
+    }
+
+    registerHelper() {}
+
+    defineMIME() {}
+}
+
+var CodeMirror = new cm();
+    </script>
+    <script src="src/main.js" type="module"></script>
 </html>

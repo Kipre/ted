@@ -6,9 +6,9 @@ export class Controls extends HTMLElement {
         this.line.setAttribute('type', 'text');
         this.appendChild(this.line);
 
-        this.onkeydown = (e) => {
-            console.log(e);
-        }
+//         this.onkeydown = (e) => {
+//             console.log(e);
+//         }
     }
 }
 
