@@ -1,9 +1,7 @@
 import {Ted} from './editor.js';
-
 // navigator.permissions.query({
 //     name: 'clipboard-read'
 // });
-
 const editor = document.getElementById('ted');
 
 

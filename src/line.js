@@ -1,4 +1,4 @@
-import {StringStream} from './stringstream.js';
+import {parser} from '../lezer/lezer-javascript.js';
 
 export class Line extends HTMLElement {
 
@@ -18,20 +18,11 @@ export class Line extends HTMLElement {
     }
 
     highlight() {
-        let text = '';
-        let parserState = this.previousSibling?.parserState || this.parentNode.mode.startState(0);
-        const stream = new StringStream(this.content,this.parentNode.options.tabSize);
-        while (!stream.eol()) {
-            const currentClass = this.parentNode.mode.token(stream, parserState);
-            text += currentClass ? `<span class="cm-${currentClass}">${stream.current()}</span>` : stream.current();
-            stream.start = stream.pos;
-        }
-        this.parserState = parserState;
-        this.innerHTML = text;
-    }
-
-    connectedCallback() {
-        this.highlight();
+//         const parseContext = this.parentNode?.context || parser.startParse(text);
+//         for (const line of text.split('\n')) {
+//             parseContext.advance(line.length);
+//             console.log(parseContext.forceFinish());
+//         }
     }
 }
 

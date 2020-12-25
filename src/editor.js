@@ -1,7 +1,6 @@
 import {Cursel, before} from './cursel.js';
 import {Line} from './line.js';
 import {Controls} from './controls.js';
-import {fetchMode} from './codemirror.js';
 
 export class Ted extends HTMLElement {
 
@@ -14,15 +13,7 @@ export class Ted extends HTMLElement {
             tabSize: 4
         }
 
-        fetchMode('python').then(()=>{
-            this.mode = CodeMirror.modeFunc({
-                indentUnit: this.options.tabSize
-            }, {
-                statementIndent: 2
-            });
-            this.insertText(text);}
-        );
-
+        this.insertText(text);
         //         this.interval = window.setInterval(this.blink, 500);
 
         document.onmousedown = (e)=>{

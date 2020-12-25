@@ -3,6 +3,11 @@
     src: 'fonts/JetBrainsMono-VariableFont_wght.ttf' format('tff');
 }
 
+@font-face {
+    font-family: 'JetBrains Mono Italic';
+    src: 'fonts/JetBrainsMono-Italic-VariableFont_wght.ttf' format('tff');
+}
+
 html {
     min-height: 100%;
 }
@@ -51,14 +56,16 @@ ted-controls {
     position: absolute;
     display: block;
 } */
-.selection {
-    background: #b7deff;
+ted-cursel > .selection {
+    pointer-events: none;
+    background: #8ca8e8;
+    opacity: 0.3;
     position: absolute;
-    z-index: -1;
+    /* z-index: -1; */
     border-radius: 0px 3px 3px 3px;
 }
 
-.cursor {
+ted-cursel > .cursor {
     pointer-events: none;
     position: absolute;
     width: 2px;
@@ -81,17 +88,17 @@ ted-line::before {
         background: #333;
     }
 
-    .selection {
-        background: #3d5590;
+    ted-cursel > .selection {
+        background: #aeaebe;
+    }
+
+    ted-cursel > .cursor {
+        background : #fff;
     }
 
     ted-editor {
         color: #ddd;
         border-left: solid #736f6f 1px;
-    }
-
-    .cursor {
-        background : #fff;
     }
 
     ted-line::before {

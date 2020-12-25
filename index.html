@@ -8,24 +8,9 @@
         <link href="manifest.json" rel="manifest">
     </head>
     <body>
-        <ted-editor id='ted'>const before = (l1,c1,l2,c2)=>{
-    return (l1 < l2) || (l1 == l2 && c1 < c2);
-}
-
-class Line extends HTMLElement {
-
-    constructor(content) {
-        super();
-
-        this.innerHTML = `${content}`;
-    }
-
-    get content() {
-        return this.textContent;
-    }
-
-    set content(val) {
-        this.innerHTML = val;
+        <ted-editor id='ted'>async function(someThing) {
+    for (const el of someThing) {
+        console.log(el?.gerg);
     }
 }</ted-editor>
     </body>
