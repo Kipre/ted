@@ -216,10 +216,6 @@ export class Cursel {
         return this.tl == null || (this.l == this.tl && this.c == this.tc);
     }
 
-    visible() {
-
-    }
-
     toCursor(line, char) {
         if (line !== null) {
             this.l = line;
@@ -228,7 +224,6 @@ export class Cursel {
         }
         this.tl = null;
         this.tc = null;
-        this.render();
     }
 
     toSelection() {
@@ -254,39 +249,37 @@ export class Cursel {
         }
     }
 
-    move(way) {
-        const lastLine = this.parentElement.nbLines() - 1;
+    move(way, {before, here, after, totalLines}) {
+        const lastLine = totalLines - 1;
         switch (way) {
         case 'up':
             if (this.l != 0) {
                 this.l = this.l - 1;
-                this.c = Math.min(this.parentElement.lineLength(this.l), this.hc);
+                this.c = Math.min(before, this.hc);
             } else {
                 this.l = 0;
                 this.c = 0;
             }
-            this.render();
             break;
         case 'down':
             if (this.l != lastLine) {
                 this.l = this.l + 1;
-                this.c = Math.min(this.parentElement.lineLength(this.l), this.hc);
+                this.c = Math.min(after, this.hc);
             } else {
                 this.l = lastLine
-                this.c = this.parentElement.lineLength(lastLine);
+                this.c = here;
             }
-            this.render();
             break;
         case 'right':
-            const lastChar = this.parentElement.lineLength(this.l);
+            const lastChar = here;
             if (this.c == lastChar && this.l != lastLine)
                 this.update(this.l + 1, 0)
-            else if (this.l != lastLine)
+            else if (this.l != lastChar)
                 this.update(this.l, this.c + 1);
             break;
         case "left":
             if (this.c == 0 && this.l != 0)
-                this.update(this.l - 1, Math.max(this.parentElement.lineLength(this.l - 1), this.c));
+                this.update(this.l - 1, Math.max(before, this.c));
             else if (this.c != 0)
                 this.update(this.l, this.c - 1);
             break;
@@ -296,13 +289,13 @@ export class Cursel {
         //         console.log(this.l, this.c, this.tl, this.tc, this.hc);
     }
 
-    moveSelection(way) {
+    moveSelection(way, context) {
         if (this.isCursor())
             this.toSelection();
-        this.move(way);
+        this.move(way, context);
     }
 
-    moveCursor(way) {
+    moveCursor(way, context) {
         if (!this.isCursor()) {
             if (way == 'left' || way == 'up') {
                 const [l,c,_1,_2] = this.orderedPositions();
@@ -312,7 +305,7 @@ export class Cursel {
                 this.toCursor(l, c);
             }
         } else
-            this.move(way);
+            this.move(way, context);
     }
 
     adjust(line, char, deltaLine, deltaChar) {
@@ -320,7 +313,6 @@ export class Cursel {
             this.c += deltaChar;
         if (this.l >= line)
             this.l += deltaLine;
-        this.render();
     }
 
     inside(line, char) {

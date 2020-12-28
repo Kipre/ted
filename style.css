@@ -12,11 +12,9 @@ html {
     height: 100%;
 }
 
-ted-scrollbar {
-    width: 10px;
+ted-vscrollbar, ted-hscrollbar {
     background: aliceblue;
     position: absolute;
-    /* display: block; */
     border-radius: 3px;
     cursor: default;
 }
@@ -44,6 +42,7 @@ body {
     min-height: 100%;
     border: none;
     overflow: hidden;
+  overscroll-behavior-x: none;
 }
 
 ted-line {
@@ -115,7 +114,7 @@ ted-line.counted::before {
         color: #736f6f;
     }
 
-    ted-scrollbar {
+    ted-vscrollbar, ted-hscrollbar {
         background: #8e8e8e;
     }
 }

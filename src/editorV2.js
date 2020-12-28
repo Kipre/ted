@@ -1,11 +1,12 @@
 import {Cursel, before} from './cursel.js';
 import {Line} from './line.js';
 import {Controls} from './controls.js';
-import {Scrollbar} from './scrollbar.js';
+import {VerticalScrollbar, HorizontalScrollbar} from './scrollbar.js';
 
 const config = {
     leftMargin: 50,
-    brakeLines: false
+    brakeLines: false,
+    tabSize: 4
 }
 
 export class Ted extends HTMLElement {
@@ -16,20 +17,20 @@ export class Ted extends HTMLElement {
         this.docLines = this.doc.split('\n');
         this.innerHTML = "";
 
-        this.currentLine = 0;
-        this.currentDelta = 0;
-        this.absPosition = 0;
-
         this.computeCharacterSize();
         this.computeViewport();
+
+        this.position = 0;
+        this.hPosition = 0;
+        this.longestLine = this.nbChar;
+
         this.prepareDOM();
 
         this.render();
 
-        window.addEventListener('wheel', e=>{
-            this.scroll(e.deltaY)
-        }
-        );
+        window.addEventListener('wheel', e=>this.scroll(e));
+
+        document.addEventListener('keydown', this.keyDown.bind(this));
 
         this.onmousedown = e=>{
             if (e.defaultPrevented)
@@ -70,24 +71,63 @@ export class Ted extends HTMLElement {
             this.fuseCursels();
         }
         );
+
+        console.log(window.history);
+    }
+
+    set hPosition(val) {
+        this._hpos = val;
+        this._char = Math.floor(val / this.charWidth)
+    }
+
+    get hPosition() {
+        return this._hpos;
+    }
+
+    get currentChar() {
+        return this._char;
+    }
+
+    set position(val) {
+        this._pos = val;
+        this._line = Math.floor(this.position / this.charHeight);
+        this._delta = this.position % this.charHeight;
+    }
+
+    get position() {
+        return this._pos;
+    }
+
+    set currentLine(val) {
+        this._line = val;
+        this._delta = 0;
+        this._pos = val * this.charHeight;
+    }
+
+    get currentLine() {
+        return this._line;
+    }
+
+    get currentDelta() {
+        return this._delta;
     }
 
     renderCursels() {
         this.relativeDiv.querySelectorAll('.cursor').forEach(e=>e.remove());
         this.relativeDiv.querySelectorAll('.selection').forEach(e=>e.remove());
         this.cursels.forEach(c=>{
-            if (this.visible(c.l)) {
+            if (this.visible(c.l, c.c)) {
                 const cursor = document.createElement('div');
                 cursor.classList.add('cursor');
                 cursor.style.top = `${(c.l - this.currentLine) * this.charHeight}px`;
-                cursor.style.left = `${1 + c.c * this.charWidth}px`;
+                cursor.style.left = `${1 + (c.c - this.currentChar)* this.charWidth}px`;
                 this.relativeDiv.appendChild(cursor);
             }
             const [sl,sc,el,ec] = c.orderedPositions();
             for (let i = sl; i <= el; ++i) {
                 if (this.visible(i)) {
-                    const start = i == sl ? sc : 0
-                    const end = i == el ? ec : this.docLines[i].length + 1;
+                    const start = i == sl ? Math.max(sc - this.currentChar, 0): 0 ;
+                    const end = (i == el ? ec : this.docLines[i].length + 1) - this.currentChar;
 
                     const subSelection = document.createElement('div');
                     subSelection.classList.add('selection');
@@ -102,35 +142,79 @@ export class Ted extends HTMLElement {
         );
     }
 
-    visible(line) {
-        return this.currentLine <= line && line <= this.currentLine + this.nbLines
+    input(text) {
+        this.cursels.forEach((c)=>{
+            const [sl,sc,el,ec] = c.orderedPositions();
+            let head, tail;
+            for (let i = sl; i <= el; ++i) {
+                if (i == el)
+                    tail = this.docLines[sl].slice(ec);
+                if (i == sl)
+                    head = this.docLines[sl].slice(0, sc);
+                this.docLines.splice(sl, 1);
+            }
+            const newLines = (head + text + tail).split('\n');
+            this.docLines.splice(sl, 0, ...newLines);
+            const last = newLines[newLines.length - 1].length - tail.length;
+            c.toCursor(sl + newLines.length - 1, last);
+            for (const k of this.cursels) {
+                if (k === c)
+                    break;
+                k.adjust(el, ec, sl - el + newLines.length - 1, last - ec);
+            }
+        }
+        );
+        this.render();
+        this.fuseCursels();
+    }
+
+    visible(line, char) {
+        char ??= this.currentChar;
+        return this.currentLine <= line 
+               && line <= this.currentLine + this.nbLines
+               && this.currentChar <= char
+               && char <= this.currentChar + this.nbChar;
     }
 
     mousePosition(e) {
-        const char = Math.round((e.srcElement == this ? e.offsetX : 0) / this.charWidth);
-        let line = Math.max(0, Math.round(((e.offsetY + this.absPosition) / this.charHeight) - 0.4));
+        const char = Math.round((e.srcElement == this ? e.offsetX : 0) / this.charWidth) + this.currentChar;
+        let line = Math.max(0, Math.round(((e.offsetY + this.position) / this.charHeight) - 0.4));
         return [line = Math.min(line, this.docLines.length - 1), Math.min(char, this.docLines[line].length)];
     }
 
-    scroll(deltaY) {
-        this.absPosition = Math.min(Math.max(0, this.absPosition + deltaY), this.limit);
+    scroll(e) {
+        e.stopPropagation();
+        this.position = Math.min(Math.max(0, this.position + e.deltaY), this.limit);
+        this.hPosition = Math.min(Math.max(0, this.hPosition + e.deltaX), (this.longestLine - this.nbChar + 2)*this.charWidth);
 
-        this.scrollbar.update(this.absPosition, this.limit);
-
-        this.currentLine = Math.floor(this.absPosition / this.charHeight);
-        this.currentDelta = this.absPosition % this.charHeight;
         this.render();
     }
 
+    refocus() {
+        if (this.currentLine >= this.docLines.length) {
+            this.currentLine = this.docLines.length - 1;
+        }
+    }
+
     render() {
+        this.refocus();
+
         this.style.counterSet = `line ${this.currentLine}`;
         this.relativeDiv.style.top = `-${this.currentDelta}px`;
 
         for (let i = 0; i < this.nbLines; i++) {
-            this.lines[i].content = this.docLines[i + this.currentLine] ?? String.fromCodePoint(0);
+            this.longestLine = Math.max(this.docLines[i + this.currentLine]?.length ?? 0, this.longestLine); 
+            this.lines[i].content = this.docLines[i + this.currentLine]?.slice(this.currentChar) ?? String.fromCodePoint(0);
         }
 
-        this.renderCursels()
+        this.vScrollbar.update(this.position, this.limit);
+        this.hScrollbar.update(this.currentChar, this.longestLine);
+
+        this.renderCursels();
+    }
+
+    get limit() {
+        return (this.docLines.length - 1) * this.charHeight;
     }
 
     prepareDOM() {
@@ -148,9 +232,12 @@ export class Ted extends HTMLElement {
 
         this.cursels = [];
 
-        this.limit = (this.docLines.length - 1) * this.charHeight;
-        this.scrollbar = new Scrollbar(this.nbLines * this.charHeight,this.limit,this.charWidth * this.nbChar)
-        this.appendChild(this.scrollbar);
+        this.vScrollbar = new VerticalScrollbar(this.nbLines * this.charHeight,
+                                                this.limit, this.charHeight);
+        this.appendChild(this.vScrollbar);
+
+        this.hScrollbar = new HorizontalScrollbar(this.nbChar, this.charWidth);
+        this.appendChild(this.hScrollbar);
     }
 
     computeViewport() {
@@ -177,8 +264,91 @@ export class Ted extends HTMLElement {
                     toRemove.add(j);
             }
         }
-        this.cursels = this.cursels.filter((_, i) => !toRemove.has(i));
+        this.cursels = this.cursels.filter((_,i)=>!toRemove.has(i));
         this.renderCursels();
+    }
+
+    keyDown(e) {
+        if (e.defaultPrevented)
+            return;
+        if (e.shiftKey && e.ctrlKey) {
+            if (e.key == "P") {
+                e.preventDefault();
+                this.querySelector('ted-controls')?.remove();
+                this.cursels().forEach(remove);
+                document.body.appendChild(new Controls());
+            } else if (e.key == 'F') {}
+        } else if (e.shiftKey) {
+            e.preventDefault();
+            if (e.key.includes("Arrow")) {
+                this.cursels.forEach(c=>{
+                    c.moveSelection(e.key.slice(5).toLowerCase(), this.lineContext(c.l));
+                }
+                );
+                this.render();
+            } else if (e.key.length == 1) {
+                this.input(e.key);
+            }
+        } else if (e.ctrlKey) {
+            e.preventDefault();
+            if (e.key == "r") {
+                // developement
+                document.location.reload(true);
+            } else if (e.key == "s") {
+                window.showOpenFilePicker();
+            } else if (e.key == "c") {
+                navigator.clipboard.writeText(this.textFromCursel(this.cursels[0]));
+            } else if (e.key == 'v') {
+                navigator.clipboard.readText().then(clipText=>{
+                    clipText = clipText.replace(/\s\n/g, '\n');
+                    this.input(clipText);
+                }
+                );
+            }
+        } else {
+            e.preventDefault();
+            if (e.key.length == 1) {
+                this.input(e.key);
+            } else if (e.key == 'Backspace') {
+                this.cursels.filter(c=>c.isCursor()).forEach(c=>c.moveSelection('left', this.lineContext(c.l)));
+                this.input('');
+            } else if (e.key == 'Tab') {
+                this.input(' '.repeat(config.tabSize));
+            } else if (e.key == 'Enter') {
+                this.input('\n');
+            } else if (e.key.includes("Arrow")) {
+                this.cursels.forEach(c=>c.moveCursor(e.key.slice(5).toLowerCase(), this.lineContext(c.l)));
+                this.fuseCursels();
+            } else if (e.key == "Escape") {
+                this.querySelector('ted-controls')?.remove();
+            } else {
+                console.log(e.key);
+            }
+        }
+    }
+
+    textFromCursel(cursel) {
+        let text = "";
+        const [sl,sc,el,ec] = cursel.orderedPositions();
+        if (cursel.isCursor()) {
+            text = "\n" + this.docLines[i];
+        } else {
+            for (let i = sl; i <= el; ++i) {
+                const startChar = i == sl ? sc : 0
+                const endChar = i == el ? ec : this.docLines[i].length + 1;
+                text += (this.docLines[i] + '\n').slice(startChar, endChar);
+            }
+        }
+        return text;
+    }
+
+    lineContext(i) {
+        return {
+            before: this.docLines[i - 1]?.length,
+            here: this.docLines[i]?.length,
+            after: this.docLines[i + 1]?.length,
+            totalLines: this.docLines.length
+        };
     }
 }
 
