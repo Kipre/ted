@@ -1,8 +1,7 @@
-import {Ted} from './editor.js';
+import {Ted} from './editorV2.js';
 // navigator.permissions.query({
 //     name: 'clipboard-read'
 // });
-const editor = document.getElementById('ted');
 
 
 // if ('serviceWorker'in navigator) {

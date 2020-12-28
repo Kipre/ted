@@ -2,11 +2,12 @@ import {Cursel, before} from './cursel.js';
 import {Line} from './line.js';
 import {Controls} from './controls.js';
 
+const remove = e=>e.remove();
+
 export class Ted extends HTMLElement {
 
     constructor(lineWidth, lineHeight) {
         super();
-
 
         const text = this.textContent;
         this.options = {
@@ -16,7 +17,9 @@ export class Ted extends HTMLElement {
         this.insertText(text);
         //         this.interval = window.setInterval(this.blink, 500);
 
-        document.onmousedown = (e)=>{
+        this.onmousedown = (e)=>{
+            if (e.defaultPrevented)
+                return;
             const [line,char] = this.mousePosition(e);
             const cursels = this.cursels();
             let nextCursel;
@@ -54,16 +57,17 @@ export class Ted extends HTMLElement {
 
         window.addEventListener('resize', ()=>this.computeCharacterSize());
 
-        //         window.addEventListener('blur', ()=>{
-        //             this.cursels.forEach((c)=>c.remove());
-        //             window.clearInterval(this.interval);
-        //         }
-        //         );
+        window.addEventListener('blur', ()=>{
+            this.cursels().forEach((c)=>c.remove());
+            window.clearInterval(this.interval);
+        }
+        );
 
         //         window.addEventListener('scroll', (e)=>{
         //             console.log(window.scrollY, document.height);
         //         }
         //         );
+        this.registerTF();
     }
 
     get blink() {
@@ -109,6 +113,13 @@ export class Ted extends HTMLElement {
         return result;
     }
 
+    async registerTF() {
+//         await tf.setBackend('wasm');
+//         this.tf = tf;
+        this.highlightModel = await tf.loadLayersModel('models/highlight-model/model.json');
+        this.lines().forEach(l=>{l.content = l.content});
+    }
+
     async fuseCursels() {
         const cursels = this.querySelectorAll('ted-cursel');
         for (let i = 1; i < cursels.length; i++) {
@@ -119,12 +130,12 @@ export class Ted extends HTMLElement {
     }
 
     insertText(text) {
-            this.innerHTML = "";
-            this.computeCharacterSize();
+        this.innerHTML = "";
+        this.computeCharacterSize();
 
-            for (const line of text.split('\n')) {
-                this.appendChild(new Line(line));
-            }
+        for (const line of text.split('\n')) {
+            this.appendChild(new Line(line));
+        }
     }
 
     input(key) {
@@ -194,7 +205,8 @@ export class Ted extends HTMLElement {
             if (e.key == "P") {
                 e.preventDefault();
                 this.querySelector('ted-controls')?.remove();
-                this.appendChild(new Controls());
+                this.cursels().forEach(remove);
+                document.body.appendChild(new Controls());
             } else if (e.key == 'F') {}
         } else if (e.shiftKey) {
             e.preventDefault();

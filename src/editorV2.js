@@ -1,15 +1,4 @@
-<!DOCTYPE html>
-<html>
-    <title>ted</title>
-    <head>
-        <meta name="theme-color" content="#317EFB"/>
-        <link href="style.css" rel="stylesheet">
-        <link href="themes/monokai.css" rel="stylesheet">
-        <link href="manifest.json" rel="manifest">
-        <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
-    </head>
-    <body>
-        <ted-editor id='ted'>import {Cursel, before} from './cursel.js';
+import {Cursel, before} from './cursel.js';
 import {Line} from './line.js';
 import {Controls} from './controls.js';
 import {Scrollbar} from './scrollbar.js';
@@ -194,9 +183,3 @@ export class Ted extends HTMLElement {
 }
 
 customElements.define('ted-editor', Ted);
-</ted-editor>
-    </body>
-    <script src="src/main.js" type="module"></script>
-<!--     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.7.0/dist/tf.min.js"></script> -->
-<!--     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js"></script> -->
-</html>

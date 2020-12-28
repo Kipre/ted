@@ -1,0 +1,101 @@
+
+        /* Based on Sublime Text's Monokai theme */
+        html {
+            background: #282828;
+            color: #fff
+        }
+
+        span.comment {
+            color: #75715e;
+        }
+
+        span.operator {
+            color: #ae81ff;
+        }
+
+        span.number {
+            color: #ae81ff;
+        }
+
+        span.cm-comment.cm-attribute {
+            color: #97b757;
+        }
+
+        span.cm-comment.cm-def {
+            color: #bc9262;
+        }
+
+        span.cm-comment.cm-tag {
+            color: #bc6283;
+        }
+
+        span.cm-comment.cm-type {
+            color: #5998a6;
+        }
+
+        span.property {
+            color: #a6e22e;
+        }
+
+        span.function {
+            color: #ede6ab;
+        }
+
+        span.function-builtin {
+            color: #ede6ab;
+            /* font-family: monospace; */
+            font-style: italic;
+        }
+
+        span.function-method {
+            color: #44baf2;
+        }
+
+        span.keyword {
+            color: #f92672;
+        }
+
+        span.variable-builtin {
+            color: #66d9ef;
+        }
+
+        span.string {
+            color: #e6db74;
+        }
+
+        span.variable {
+            color: #f8f8f2;
+        }
+
+        span.constant-builtin {
+            color: #ff9eb7;
+        }
+
+        span.punctuation-special {
+            color: #a0a0a0;
+        }
+
+        span.string-special {
+            color: #60d79c;
+        }
+
+        span.cm-bracket {
+            color: #f8f8f2;
+        }
+
+        span.cm-tag {
+            color: #f92672;
+        }
+
+        span.variable-parameter {
+            color: #a894cc;
+        }
+
+        span.cm-link {
+            color: #ae81ff;
+        }
+
+        span.cm-error {
+            background: #f92672;
+            color: #f8f8f0;
+        }
