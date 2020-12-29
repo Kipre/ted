@@ -8,6 +8,8 @@ const config = {
     brakeLines: false,
     tabSize: 4,
     scrollDistance: 80,
+    darkTheme: 'monokai',
+    lightTheme: 'breakers'
 }
 
 export class Ted extends HTMLElement {
@@ -16,6 +18,8 @@ export class Ted extends HTMLElement {
         super();
         this.doc = this.textContent;
         this.docLines = this.doc.split('\n');
+
+        this.setTheme();
 
         this.resize();
 
@@ -64,6 +68,19 @@ export class Ted extends HTMLElement {
         );
 
         window.addEventListener('resize', e=>this.resize());
+
+        window.matchMedia("(prefers-color-scheme: dark)")
+            .addListener(e=>this.setTheme(e.matches ? 'dark': 'light'));
+    }
+
+    setTheme(theme) {
+        document.head.querySelector('.theme')?.remove();
+        const link = document.createElement("link");
+        link.classList.add('theme');
+        link.type = "text/css";
+        link.rel = "stylesheet";
+        link.href = `themes/${theme == 'dark' ? config.darkTheme : config.lightTheme}.css`;
+        document.head.appendChild(link);
     }
 
     resize() {
@@ -86,13 +103,13 @@ export class Ted extends HTMLElement {
                 const cursor = document.createElement('div');
                 cursor.classList.add('cursor');
                 cursor.style.top = `${(c.l - this.currentLine) * this.charHeight}px`;
-                cursor.style.left = `${1 + (c.c - this.currentChar)* this.charWidth}px`;
+                cursor.style.left = `${1 + (c.c - this.currentChar) * this.charWidth}px`;
                 this.relativeDiv.appendChild(cursor);
             }
             const [sl,sc,el,ec] = c.orderedPositions();
             for (let i = sl; i <= el; ++i) {
                 if (this.visible(i)) {
-                    const start = i == sl ? Math.max(sc - this.currentChar, 0): 0 ;
+                    const start = i == sl ? Math.max(sc - this.currentChar, 0) : 0;
                     const end = (i == el ? ec : this.docLines[i].length + 1) - this.currentChar;
 
                     const subSelection = document.createElement('div');
@@ -136,10 +153,7 @@ export class Ted extends HTMLElement {
 
     visible(line, char) {
         char ??= this.currentChar;
-        return this.currentLine <= line 
-               && line <= this.currentLine + this.nbLines
-               && this.currentChar <= char
-               && char <= this.currentChar + this.nbChars;
+        return this.currentLine <= line && line <= this.currentLine + this.nbLines && this.currentChar <= char && char <= this.currentChar + this.nbChars;
     }
 
     mousePosition(e) {
@@ -197,16 +211,19 @@ export class Ted extends HTMLElement {
 
         this.cursels = [];
 
-        this.vScrollbar = new Scrollbar(this.viewport.height, 'vertical');
+        this.vScrollbar = new Scrollbar(this.viewport.height,'vertical');
         this.appendChild(this.vScrollbar);
 
-        this.hScrollbar = new Scrollbar(this.viewport.width, 'horizontal');
+        this.hScrollbar = new Scrollbar(this.viewport.width,'horizontal');
         this.appendChild(this.hScrollbar);
     }
 
     computeViewport() {
         const rect = this.parentNode.getBoundingClientRect();
-        this.viewport = {height: rect.height, width: rect.width};
+        this.viewport = {
+            height: rect.height,
+            width: rect.width
+        };
         this.nbLines = Math.ceil(rect.height / this.charHeight);
         this.nbChars = Math.floor((rect.width - config.leftMargin) / this.charWidth);
     }
@@ -247,6 +264,12 @@ export class Ted extends HTMLElement {
             if (e.key == "r") {
                 // developement
                 document.location.reload(true);
+            } else if (e.key == "a") {
+                const sel = new Cursel(0, 0);
+                const len = this.docLines.length - 1;
+                sel.update(len, this.docLines[len].length);
+                this.cursels = [sel];
+                this.renderCursels();
             } else if (e.key == "s") {
                 window.showOpenFilePicker();
             } else if (e.key == "c") {
@@ -300,7 +323,7 @@ export class Ted extends HTMLElement {
         for (const line of this.docLines)
             if (line.length > max)
                 max = line.length;
-        this.maxHorizontalPosition = Math.max(0, (max - this.nbChars + 2)*this.charWidth);
+        this.maxHorizontalPosition = Math.max(0, (max - this.nbChars + 2) * this.charWidth);
         this.hScrollbar.update(this.hPosition, this.maxHorizontalPosition);
     }
 
@@ -324,8 +347,6 @@ export class Ted extends HTMLElement {
         this.cursels = this.cursels.filter((_,i)=>!toRemove.has(i));
         this.renderCursels();
     }
-
-
 
     set hPosition(val) {
         this._hpos = val;

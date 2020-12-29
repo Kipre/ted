@@ -1,101 +1,101 @@
+/* Based on Sublime Text's Monokai theme */
 
-        /* Based on Sublime Text's Monokai theme */
-        html {
-            background: #282828;
-            color: #fff
-        }
+@media (prefers-color-scheme: dark) {
+     /* html {
+    background: #282828;
+    color: #fff
+} */span.comment {
+        color: #75715e;
+    }
 
-        span.comment {
-            color: #75715e;
-        }
+    span.operator {
+        color: #ae81ff;
+    }
 
-        span.operator {
-            color: #ae81ff;
-        }
+    span.number {
+        color: #ae81ff;
+    }
 
-        span.number {
-            color: #ae81ff;
-        }
+    /* span.cm-comment.cm-attribute {
+    color: #97b757;
+}
 
-        span.cm-comment.cm-attribute {
-            color: #97b757;
-        }
+span.cm-comment.cm-def {
+    color: #bc9262;
+}
 
-        span.cm-comment.cm-def {
-            color: #bc9262;
-        }
+span.cm-comment.cm-tag {
+    color: #bc6283;
+}
 
-        span.cm-comment.cm-tag {
-            color: #bc6283;
-        }
+span.cm-comment.cm-type {
+    color: #5998a6;
+} */
+    span.property {
+        color: #a6e22e;
+    }
 
-        span.cm-comment.cm-type {
-            color: #5998a6;
-        }
+    span.function {
+        color: #ede6ab;
+    }
 
-        span.property {
-            color: #a6e22e;
-        }
+    span.function-builtin {
+        color: #ede6ab;
+        /* font-family: monospace; */
+        font-style: italic;
+    }
 
-        span.function {
-            color: #ede6ab;
-        }
+    span.function-method {
+        color: #44baf2;
+    }
 
-        span.function-builtin {
-            color: #ede6ab;
-            /* font-family: monospace; */
-            font-style: italic;
-        }
+    span.keyword {
+        color: #f92672;
+    }
 
-        span.function-method {
-            color: #44baf2;
-        }
+    span.variable-builtin {
+        color: #66d9ef;
+    }
 
-        span.keyword {
-            color: #f92672;
-        }
+    span.string {
+        color: #e6db74;
+    }
 
-        span.variable-builtin {
-            color: #66d9ef;
-        }
+    span.variable {
+        color: #f8f8f2;
+    }
 
-        span.string {
-            color: #e6db74;
-        }
+    span.constant-builtin {
+        color: #ff9eb7;
+    }
 
-        span.variable {
-            color: #f8f8f2;
-        }
+    span.punctuation-special {
+        color: #a0a0a0;
+    }
 
-        span.constant-builtin {
-            color: #ff9eb7;
-        }
+    span.string-special {
+        color: #60d79c;
+    }
 
-        span.punctuation-special {
-            color: #a0a0a0;
-        }
+    /* span.cm-bracket {
+    color: #f8f8f2;
+}
 
-        span.string-special {
-            color: #60d79c;
-        }
+span.cm-tag {
+    color: #f92672;
+}
 
-        span.cm-bracket {
-            color: #f8f8f2;
-        }
+span.variable-parameter {
+    color: #a894cc;
+}
 
-        span.cm-tag {
-            color: #f92672;
-        }
+span.cm-link {
+    color: #ae81ff;
+}
 
-        span.variable-parameter {
-            color: #a894cc;
-        }
-
-        span.cm-link {
-            color: #ae81ff;
-        }
-
-        span.cm-error {
-            background: #f92672;
-            color: #f8f8f0;
-        }
+span.cm-error {
+    background: #f92672;
+    color: #f8f8f0;
+}
+ */
+}
