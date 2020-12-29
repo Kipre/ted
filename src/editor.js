@@ -1,41 +1,50 @@
 import {Cursel, before} from './cursel.js';
 import {Line} from './line.js';
 import {Controls} from './controls.js';
+import {Scrollbar} from './scrollbar.js';
 
-const remove = e=>e.remove();
+const config = {
+    leftMargin: 50,
+    brakeLines: false,
+    tabSize: 4,
+    scrollDistance: 80,
+}
 
 export class Ted extends HTMLElement {
 
-    constructor(lineWidth, lineHeight) {
+    constructor() {
         super();
+        this.doc = this.textContent;
+        this.docLines = this.doc.split('\n');
 
-        const text = this.textContent;
-        this.options = {
-            tabSize: 4
-        }
+        this.resize();
 
-        this.insertText(text);
-        //         this.interval = window.setInterval(this.blink, 500);
+        window.addEventListener('wheel', e=>this.scroll(e));
 
-        this.onmousedown = (e)=>{
+        document.addEventListener('keydown', e=>this.keyDown(e));
+
+        this.onmousedown = e=>{
             if (e.defaultPrevented)
                 return;
             const [line,char] = this.mousePosition(e);
-            const cursels = this.cursels();
-            let nextCursel;
-            if (!e.ctrlKey)
-                cursels.forEach(c=>c.remove());
-            else
+            this.selection = new Cursel(line,char);
+
+            if (!e.ctrlKey || this.cursels.length == 0)
+                this.cursels = [this.selection];
+            else {
                 // sorted insert
-                for (const c of cursels) {
+                let inserted = false;
+                for (const [i,c] of this.cursels.entries()) {
                     if (before(c.l, c.c, line, char)) {
-                        nextCursel = c;
+                        this.cursels.splice(i, 0, this.selection);
+                        inserted = true;
                         break;
                     }
                 }
-            this.selection = new Cursel(line,char);
-            //             this.selection.setAttribute("nb", this.cursels().length);
-            this.insertBefore(this.selection, nextCursel);
+                if (!inserted)
+                    this.cursels.unshift(this.selection);
+            }
+            this.renderCursels();
         }
 
         window.addEventListener('mousemove', e=>{
@@ -43,6 +52,7 @@ export class Ted extends HTMLElement {
                 const [line,char] = this.mousePosition(e);
                 this.selection.update(line, char);
             }
+            this.renderCursels();
         }
         );
 
@@ -53,139 +63,152 @@ export class Ted extends HTMLElement {
         }
         );
 
-        document.addEventListener('keydown', this.keyDown.bind(this));
+        window.addEventListener('resize', e=>this.resize());
+    }
 
-        window.addEventListener('resize', ()=>this.computeCharacterSize());
+    resize() {
+        this.computeCharacterSize();
+        this.computeViewport();
 
-        window.addEventListener('blur', ()=>{
-            this.cursels().forEach((c)=>c.remove());
-            window.clearInterval(this.interval);
+        this.position = 0;
+        this.hPosition = 0;
+
+        this.prepareDOM();
+
+        this.render();
+    }
+
+    renderCursels() {
+        this.relativeDiv.querySelectorAll('.cursor').forEach(e=>e.remove());
+        this.relativeDiv.querySelectorAll('.selection').forEach(e=>e.remove());
+        this.cursels.forEach(c=>{
+            if (this.visible(c.l, c.c)) {
+                const cursor = document.createElement('div');
+                cursor.classList.add('cursor');
+                cursor.style.top = `${(c.l - this.currentLine) * this.charHeight}px`;
+                cursor.style.left = `${1 + (c.c - this.currentChar)* this.charWidth}px`;
+                this.relativeDiv.appendChild(cursor);
+            }
+            const [sl,sc,el,ec] = c.orderedPositions();
+            for (let i = sl; i <= el; ++i) {
+                if (this.visible(i)) {
+                    const start = i == sl ? Math.max(sc - this.currentChar, 0): 0 ;
+                    const end = (i == el ? ec : this.docLines[i].length + 1) - this.currentChar;
+
+                    const subSelection = document.createElement('div');
+                    subSelection.classList.add('selection');
+                    subSelection.style.width = `${(end - start) * this.charWidth}px`;
+                    subSelection.style.height = `${this.charHeight}px`;
+                    subSelection.style.top = `${(i - this.currentLine) * this.charHeight}px`;
+                    subSelection.style.left = `${2 + start * this.charWidth}px`;
+                    this.relativeDiv.appendChild(subSelection);
+                }
+            }
         }
         );
-
-        //         window.addEventListener('scroll', (e)=>{
-        //             console.log(window.scrollY, document.height);
-        //         }
-        //         );
-        this.registerTF();
     }
 
-    get blink() {
-        return ()=>{
-            const [first,...others] = this.cursors;
-            first.hidden ^= true;
-            others.forEach((c)=>{
-                c.hidden = first.hidden;
-            }
-            );
-        }
-    }
-
-    textFromSelection(firstSelection) {
-        let text = "";
-        const [sl,sc,el,ec] = firstSelection.orderedPositions();
-        if (firstSelection.isCursor()) {
-            text = "\n" + this.lines()[sl].content;
-        } else {
-            const lines = this.lines();
-            for (let i = sl; i <= el; ++i) {
-                const startChar = i == sl ? sc : 0
-                const endChar = i == el ? ec : lines[i].textContent.length + 1;
-                text += lines[i].textContent.slice(startChar, endChar);
-            }
-        }
-        return text;
-    }
-
-    lines() {
-        return this.querySelectorAll('ted-line');
-    }
-
-    cursels() {
-        return this.querySelectorAll('ted-cursel');
-    }
-
-    cursors() {
-        const result = [];
-        for (const c of this.querySelectorAll('ted-cursel'))
-            if (c.isCursor())
-                result.push(c);
-        return result;
-    }
-
-    async registerTF() {
-//         await tf.setBackend('wasm');
-//         this.tf = tf;
-        this.highlightModel = await tf.loadLayersModel('models/highlight-model/model.json');
-        this.lines().forEach(l=>{l.content = l.content});
-    }
-
-    async fuseCursels() {
-        const cursels = this.querySelectorAll('ted-cursel');
-        for (let i = 1; i < cursels.length; i++) {
-            for (let j = 0; j < i; j++) {
-                cursels[i].fuse(cursels[j]);
-            }
-        }
-    }
-
-    insertText(text) {
-        this.innerHTML = "";
-        this.computeCharacterSize();
-
-        for (const line of text.split('\n')) {
-            this.appendChild(new Line(line));
-        }
-    }
-
-    input(key) {
-        const [lines,cursels] = [this.lines(), this.cursels()];
-        cursels.forEach((c)=>{
+    input(text) {
+        this.cursels.forEach((c)=>{
             const [sl,sc,el,ec] = c.orderedPositions();
             let head, tail;
             for (let i = sl; i <= el; ++i) {
                 if (i == el)
-                    tail = lines[i].content.slice(ec);
+                    tail = this.docLines[sl].slice(ec);
                 if (i == sl)
-                    head = lines[i].content.slice(0, sc);
-                else
-                    lines[i].remove();
+                    head = this.docLines[sl].slice(0, sc);
+                this.docLines.splice(sl, 1);
             }
-            const newLines = (head + key + tail).split('\n');
-            const len = newLines.length - 1;
-            lines[sl].content = newLines[0];
-            for (let i = 1; i <= len; ++i)
-                this.insertBefore(new Line(newLines[i]), lines[sl + i - 1]?.nextSibling);
+            const newLines = (head + text + tail).split('\n');
+            this.docLines.splice(sl, 0, ...newLines);
             const last = newLines[newLines.length - 1].length - tail.length;
-            c.toCursor(sl + len, last);
-            for (const k of cursels) {
+            c.toCursor(sl + newLines.length - 1, last);
+            for (const k of this.cursels) {
                 if (k === c)
                     break;
-                k.adjust(el, ec, sl - el + len, last - ec);
+                k.adjust(el, ec, sl - el + newLines.length - 1, last - ec);
             }
         }
         );
+        this.render();
         this.fuseCursels();
     }
 
-    nbLines() {
-        return this.querySelectorAll('ted-line').length;
-    }
-
-    lineLength(i) {
-        return this.children[i].textContent.length;
-    }
-
-    resetBlink() {
-        window.clearInterval(this.interval);
-        this.interval = window.setInterval(this.blink, 500);
+    visible(line, char) {
+        char ??= this.currentChar;
+        return this.currentLine <= line 
+               && line <= this.currentLine + this.nbLines
+               && this.currentChar <= char
+               && char <= this.currentChar + this.nbChars;
     }
 
     mousePosition(e) {
-        const lines = this.lines();
-        const char = Math.round((e.srcElement == this ? e.offsetX : 0) / this.lineWidth);
-        const line = Math.min(Math.max(0, Math.round((e.offsetY / this.lineHeight) - 0.4)), lines.length - 1);
-        return [Math.min(line, lines.length - 1), Math.min(char, lines[line].content.length)];
+        const char = Math.round((e.srcElement == this ? e.offsetX : 0) / this.charWidth) + this.currentChar;
+        let line = Math.max(0, Math.round(((e.offsetY + this.position) / this.charHeight) - 0.4));
+        return [line = Math.min(line, this.docLines.length - 1), Math.min(char, this.docLines[line].length)];
+    }
+
+    scroll(e) {
+        this.position = Math.min(Math.max(0, this.position + (e.deltaY || 0)), this.limit);
+        this.hPosition = Math.min(Math.max(0, this.hPosition + (e.deltaX || 0)), Math.max(0, this.maxHorizontalPosition));
+        this.render();
+    }
+
+    refocus() {
+        if (this.currentLine >= this.docLines.length) {
+            this.currentLine = this.docLines.length - 1;
+        }
+    }
+
+    render() {
+        this.refocus();
+
+        this.style.counterSet = `line ${this.currentLine}`;
+        this.relativeDiv.style.top = `-${this.currentDelta}px`;
+
+        for (let i = 0; i < this.nbLines; i++) {
+            this.lines[i].content = this.docLines[i + this.currentLine]?.slice(this.currentChar) ?? String.fromCodePoint(0);
+        }
+
+        this.vScrollbar.update(this.position, this.limit);
+
+        this.renderCursels();
+
+        this.updateLongestLine();
+    }
+
+    get limit() {
+        return (this.docLines.length - 1) * this.charHeight;
+    }
+
+    prepareDOM() {
+        this.innerHTML = "";
+
+        this.relativeDiv = document.createElement('div');
+        this.relativeDiv.classList.add('relative');
+        this.appendChild(this.relativeDiv);
+
+        this.lines = [];
+        for (let i = 0; i < this.nbLines; i++) {
+            const line = new Line(String.fromCodePoint(0));
+            this.lines.push(line);
+            this.relativeDiv.appendChild(line);
+        }
+
+        this.cursels = [];
+
+        this.vScrollbar = new Scrollbar(this.viewport.height, 'vertical');
+        this.appendChild(this.vScrollbar);
+
+        this.hScrollbar = new Scrollbar(this.viewport.width, 'horizontal');
+        this.appendChild(this.hScrollbar);
+    }
+
+    computeViewport() {
+        const rect = this.parentNode.getBoundingClientRect();
+        this.viewport = {height: rect.height, width: rect.width};
+        this.nbLines = Math.ceil(rect.height / this.charHeight);
+        this.nbChars = Math.floor((rect.width - config.leftMargin) / this.charWidth);
     }
 
     computeCharacterSize() {
@@ -193,8 +216,8 @@ export class Ted extends HTMLElement {
         testSpan.innerHTML = 'a';
         this.appendChild(testSpan);
         const rect = testSpan.getBoundingClientRect();
-        this.lineHeight = rect.height;
-        this.lineWidth = rect.width;
+        this.charHeight = rect.height;
+        this.charWidth = rect.width;
         testSpan.remove();
     }
 
@@ -211,10 +234,11 @@ export class Ted extends HTMLElement {
         } else if (e.shiftKey) {
             e.preventDefault();
             if (e.key.includes("Arrow")) {
-                this.cursels().forEach(c=>{
-                    c.moveSelection(e.key.slice(5).toLowerCase());
+                this.cursels.forEach(c=>{
+                    c.moveSelection(e.key.slice(5).toLowerCase(), this.lineContext(c.l));
                 }
                 );
+                this.render();
             } else if (e.key.length == 1) {
                 this.input(e.key);
             }
@@ -226,8 +250,7 @@ export class Ted extends HTMLElement {
             } else if (e.key == "s") {
                 window.showOpenFilePicker();
             } else if (e.key == "c") {
-                const firstSelection = this.querySelector('ted-cursel');
-                navigator.clipboard.writeText(this.textFromSelection(firstSelection));
+                navigator.clipboard.writeText(this.textFromCursel(this.cursels[0]));
             } else if (e.key == 'v') {
                 navigator.clipboard.readText().then(clipText=>{
                     clipText = clipText.replace(/\s\n/g, '\n');
@@ -240,14 +263,14 @@ export class Ted extends HTMLElement {
             if (e.key.length == 1) {
                 this.input(e.key);
             } else if (e.key == 'Backspace') {
-                this.cursors().forEach(c=>c.moveSelection('left', c.update.bind(c)));
+                this.cursels.filter(c=>c.isCursor()).forEach(c=>c.moveSelection('left', this.lineContext(c.l)));
                 this.input('');
             } else if (e.key == 'Tab') {
-                this.input(' '.repeat(this.options.tabSize));
+                this.input(' '.repeat(config.tabSize));
             } else if (e.key == 'Enter') {
                 this.input('\n');
             } else if (e.key.includes("Arrow")) {
-                this.cursels().forEach(c=>c.moveCursor(e.key.slice(5).toLowerCase()));
+                this.cursels.forEach(c=>c.moveCursor(e.key.slice(5).toLowerCase(), this.lineContext(c.l)));
                 this.fuseCursels();
             } else if (e.key == "Escape") {
                 this.querySelector('ted-controls')?.remove();
@@ -255,6 +278,90 @@ export class Ted extends HTMLElement {
                 console.log(e.key);
             }
         }
+    }
+
+    textFromCursel(cursel) {
+        let text = "";
+        const [sl,sc,el,ec] = cursel.orderedPositions();
+        if (cursel.isCursor()) {
+            text = "\n" + this.docLines[i];
+        } else {
+            for (let i = sl; i <= el; ++i) {
+                const startChar = i == sl ? sc : 0
+                const endChar = i == el ? ec : this.docLines[i].length + 1;
+                text += (this.docLines[i] + '\n').slice(startChar, endChar);
+            }
+        }
+        return text;
+    }
+
+    async updateLongestLine() {
+        let max = 0;
+        for (const line of this.docLines)
+            if (line.length > max)
+                max = line.length;
+        this.maxHorizontalPosition = Math.max(0, (max - this.nbChars + 2)*this.charWidth);
+        this.hScrollbar.update(this.hPosition, this.maxHorizontalPosition);
+    }
+
+    lineContext(i) {
+        return {
+            before: this.docLines[i - 1]?.length,
+            here: this.docLines[i]?.length,
+            after: this.docLines[i + 1]?.length,
+            totalLines: this.docLines.length
+        };
+    }
+
+    async fuseCursels() {
+        const toRemove = new Set();
+        for (let i = 1; i < this.cursels.length; i++) {
+            for (let j = 0; j < i; j++) {
+                if (this.cursels[i].fuse(this.cursels[j]))
+                    toRemove.add(j);
+            }
+        }
+        this.cursels = this.cursels.filter((_,i)=>!toRemove.has(i));
+        this.renderCursels();
+    }
+
+
+
+    set hPosition(val) {
+        this._hpos = val;
+        this._char = Math.floor(val / this.charWidth)
+    }
+
+    get hPosition() {
+        return this._hpos;
+    }
+
+    get currentChar() {
+        return this._char;
+    }
+
+    set position(val) {
+        this._pos = val;
+        this._line = Math.floor(this.position / this.charHeight);
+        this._delta = this.position % this.charHeight;
+    }
+
+    get position() {
+        return this._pos;
+    }
+
+    set currentLine(val) {
+        this._line = val;
+        this._delta = 0;
+        this._pos = val * this.charHeight;
+    }
+
+    get currentLine() {
+        return this._line;
+    }
+
+    get currentDelta() {
+        return this._delta;
     }
 }
 
