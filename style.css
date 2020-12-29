@@ -12,7 +12,7 @@ html {
     height: 100%;
 }
 
-ted-vscrollbar, ted-hscrollbar, ted-scrollbar {
+ted-scrollbar {
     background: #c8c8c8;
     position: absolute;
     border-radius: 3px;
@@ -46,23 +46,23 @@ body {
 }
 
 ted-line {
-    /*     content-visibility: auto;
-    contain-intrinsic-size: 0 30px; */
     pointer-events: none;
     white-space: pre;
-    width: 99%;
+    width: 100%;
     padding-left: 1px;
     float: left;
 }
 
-ted-controls {
-    position: absolute;
+ted-options {
     display: block;
-    top: 3em;
-    left: 30%;
-    width: 30%;
-    right: 50%;
-    /* height: 100%; */
+    user-select: all;
+    pointer-events: all;
+}
+
+ted-options > div {
+    position: absolute;
+    background: black;
+    opacity: 0.7
 }
 
 .selection {
@@ -114,7 +114,7 @@ ted-line.counted::before {
         color: #736f6f;
     }
 
-    ted-vscrollbar, ted-hscrollbar, ted-scrollbar {
-        background: #8e8e8e;
+    ted-scrollbar {
+        background: #525252;
     }
 }

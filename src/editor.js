@@ -1,6 +1,6 @@
 import {Cursel, before} from './cursel.js';
 import {Line} from './line.js';
-import {Controls} from './controls.js';
+import {Options} from './options.js';
 import {Scrollbar} from './scrollbar.js';
 
 const config = {
@@ -9,7 +9,8 @@ const config = {
     tabSize: 4,
     scrollDistance: 80,
     darkTheme: 'monokai',
-    lightTheme: 'breakers'
+    lightTheme: 'breakers',
+    overSelectScrollSpeed: 0.5
 }
 
 export class Ted extends HTMLElement {
@@ -25,40 +26,11 @@ export class Ted extends HTMLElement {
 
         window.addEventListener('wheel', e=>this.scroll(e));
 
-        document.addEventListener('keydown', e=>this.keyDown(e));
+        window.addEventListener('keydown', e=>this.keyDown(e));
 
-        this.onmousedown = e=>{
-            if (e.defaultPrevented)
-                return;
-            const [line,char] = this.mousePosition(e);
-            this.selection = new Cursel(line,char);
+        this.onmousedown = e=>this.mouseDown(e);
 
-            if (!e.ctrlKey || this.cursels.length == 0)
-                this.cursels = [this.selection];
-            else {
-                // sorted insert
-                let inserted = false;
-                for (const [i,c] of this.cursels.entries()) {
-                    if (before(c.l, c.c, line, char)) {
-                        this.cursels.splice(i, 0, this.selection);
-                        inserted = true;
-                        break;
-                    }
-                }
-                if (!inserted)
-                    this.cursels.unshift(this.selection);
-            }
-            this.renderCursels();
-        }
-
-        window.addEventListener('mousemove', e=>{
-            if (this.selection) {
-                const [line,char] = this.mousePosition(e);
-                this.selection.update(line, char);
-            }
-            this.renderCursels();
-        }
-        );
+        window.addEventListener('mousemove', e=>this.mouseMove(e));
 
         window.addEventListener('mouseup', (e)=>{
             this.selection?.tighten();
@@ -69,8 +41,54 @@ export class Ted extends HTMLElement {
 
         window.addEventListener('resize', e=>this.resize());
 
-        window.matchMedia("(prefers-color-scheme: dark)")
-            .addListener(e=>this.setTheme(e.matches ? 'dark': 'light'));
+        window.addEventListener('blur', e=>{
+            this.cursels = [];
+            this.render();
+        }
+        );
+
+        window.matchMedia("(prefers-color-scheme: dark)").addListener(e=>this.setTheme(e.matches ? 'dark' : 'light'));
+    }
+
+    mouseMove(e) {
+        if (this.selection) {
+            const [line,char] = this.mousePosition(e);
+            this.selection.update(line, char);
+
+            let [x, y] = [e.clientX - config.leftMargin, e.clientY];
+            
+            const kink = (val, span) => (val < 0 || val > span) * (val - span*(val >= span));
+            
+            x = kink(x, this.viewport.width - config.leftMargin - 20);
+            y = kink(y, this.viewport.height);
+
+            this.scroll({deltaY: y*config.overSelectScrollSpeed, 
+                         deltaX: x*config.overSelectScrollSpeed});
+        }
+    }
+
+    mouseDown(e) {
+        if (e.defaultPrevented)
+            return;
+        const [line,char] = this.mousePosition(e);
+        this.selection = new Cursel(line,char);
+
+        if (!e.ctrlKey || this.cursels.length == 0)
+            this.cursels = [this.selection];
+        else {
+            // sorted insert
+            let inserted = false;
+            for (const [i,c] of this.cursels.entries()) {
+                if (before(c.l, c.c, line, char)) {
+                    this.cursels.splice(i, 0, this.selection);
+                    inserted = true;
+                    break;
+                }
+            }
+            if (!inserted)
+                this.cursels.unshift(this.selection);
+        }
+        this.renderCursels();
     }
 
     setTheme(theme) {
@@ -157,8 +175,8 @@ export class Ted extends HTMLElement {
     }
 
     mousePosition(e) {
-        const char = Math.round((e.srcElement == this ? e.offsetX : 0) / this.charWidth) + this.currentChar;
-        let line = Math.max(0, Math.round(((e.offsetY + this.position) / this.charHeight) - 0.4));
+        const char = Math.round((e.clientX - 50) / this.charWidth) + this.currentChar;
+        let line = Math.max(0, Math.round(((e.clientY + this.position) / this.charHeight) - 0.4));
         return [line = Math.min(line, this.docLines.length - 1), Math.min(char, this.docLines[line].length)];
     }
 
@@ -198,6 +216,8 @@ export class Ted extends HTMLElement {
     prepareDOM() {
         this.innerHTML = "";
 
+        this.style.height = `${this.viewport.height}px`;
+
         this.relativeDiv = document.createElement('div');
         this.relativeDiv.classList.add('relative');
         this.appendChild(this.relativeDiv);
@@ -219,13 +239,13 @@ export class Ted extends HTMLElement {
     }
 
     computeViewport() {
-        const rect = this.parentNode.getBoundingClientRect();
+        //         const rect = this.parentNode.getBoundingClientRect();
         this.viewport = {
-            height: rect.height,
-            width: rect.width
+            height: window.innerHeight,
+            width: window.innerWidth
         };
-        this.nbLines = Math.ceil(rect.height / this.charHeight);
-        this.nbChars = Math.floor((rect.width - config.leftMargin) / this.charWidth);
+        this.nbLines = Math.ceil(window.innerHeight / this.charHeight);
+        this.nbChars = Math.floor((window.innerWidth - config.leftMargin) / this.charWidth);
     }
 
     computeCharacterSize() {
@@ -244,9 +264,13 @@ export class Ted extends HTMLElement {
         if (e.shiftKey && e.ctrlKey) {
             if (e.key == "P") {
                 e.preventDefault();
-                this.querySelector('ted-controls')?.remove();
-                this.cursels().forEach(remove);
-                document.body.appendChild(new Controls());
+                const option = this.querySelector('ted-options');
+                if (option)
+                    option.remove();
+                else {
+                    this.cursels = [];
+                    this.appendChild(new Options(this.viewport));
+                }
             } else if (e.key == 'F') {}
         } else if (e.shiftKey) {
             e.preventDefault();
@@ -265,7 +289,7 @@ export class Ted extends HTMLElement {
                 // developement
                 document.location.reload(true);
             } else if (e.key == "a") {
-                const sel = new Cursel(0, 0);
+                const sel = new Cursel(0,0);
                 const len = this.docLines.length - 1;
                 sel.update(len, this.docLines[len].length);
                 this.cursels = [sel];
@@ -296,7 +320,7 @@ export class Ted extends HTMLElement {
                 this.cursels.forEach(c=>c.moveCursor(e.key.slice(5).toLowerCase(), this.lineContext(c.l)));
                 this.fuseCursels();
             } else if (e.key == "Escape") {
-                this.querySelector('ted-controls')?.remove();
+                this.querySelector('ted-options')?.remove();
             } else {
                 console.log(e.key);
             }
@@ -351,6 +375,11 @@ export class Ted extends HTMLElement {
     set hPosition(val) {
         this._hpos = val;
         this._char = Math.floor(val / this.charWidth)
+    }
+
+    set currentChar(val) {
+        this._char = val;
+        this._hpos = val * this.charWidth;
     }
 
     get hPosition() {
