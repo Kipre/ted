@@ -1,4 +1,6 @@
-const config = {
+import {config}  from './config.js';
+
+const scrollConfig = {
     thickness: 10,
     offset: 3,
     horizontal: {
@@ -14,7 +16,7 @@ const config = {
         offset: 'right',
         thickness: 'width',
         setLength: (here, length)=>{here.style.height = `${length}px`},
-        setPosition: (here, pos)=>{here.style.top = `${pos + 2}px`},
+        setPosition: (here, pos)=>{here.style.top = `${pos + 2 + config.headerHeight}px`},
         axis: 'Y'
     }
 }
@@ -22,10 +24,10 @@ const config = {
 export class Scrollbar extends HTMLElement {
     constructor(viewSize, orientation) {
         super();
-        const orient = config[orientation];
+        const orient = scrollConfig[orientation];
         this.viewSize = viewSize + (orient.viewAdjustment || 0);
-        this.style[orient.thickness] = `${config.thickness}px`;
-        this.style[orient.offset] = `${config.offset}px`;
+        this.style[orient.thickness] = `${scrollConfig.thickness}px`;
+        this.style[orient.offset] = `${scrollConfig.offset}px`;
 
         this.update = (p, mp) => {
             if (mp == 0) {

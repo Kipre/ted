@@ -1,4 +1,4 @@
-import {Ted} from './editor.js';
+import {Ted} from './ted.js';
 // navigator.permissions.query({
 //     name: 'clipboard-read'
 // });

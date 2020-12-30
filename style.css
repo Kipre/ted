@@ -22,19 +22,43 @@ ted-scrollbar {
 ted-editor {
     font-family: 'JetBrains Mono', monospace;
     font-weight: 100;
-    min-height: 100%;
-    margin: 0 0 0 50px;
-    display: inline-block;
     counter-reset: line;
-    cursor: text;
-    user-select: none;
-    border-left: solid 1px #c9c9c9;
 }
 
 
 
 ted-editor > .relative {
     position: relative;
+    margin: 0 0 0 50px;
+    display: inline-block;
+    cursor: text;
+    user-select: none;
+    border-left: solid 1px #c9c9c9;
+}
+
+ted-header {
+    position: relative;
+    display: block;
+    border-bottom: solid 1px #c9c9c9;
+    cursor: default;
+    background: white;
+    z-index: 1;
+    overscroll-behavior-x: default;
+}
+
+ted-header > span {
+    line-height: 30px;
+    font-size: 13px;
+    font-family: monospace;
+    margin: 20px;
+}
+
+ted-header > .active {
+    border-bottom: solid 3px #694391
+}
+
+ted-header > .unsaved::before {
+    content: *;
 }
 
 body {
@@ -42,7 +66,7 @@ body {
     min-height: 100%;
     border: none;
     overflow: hidden;
-  overscroll-behavior-x: none;
+    overscroll-behavior-x: none;
 }
 
 ted-line {
@@ -75,9 +99,9 @@ ted-options > div > input {
     opacity: 0.3;
     position: absolute;
     /* z-index: -1; */
-    border-radius: 0px 3px 3px 3px;
+/*     border-radius: 0px 3px 3px 3px; */
 }
-
+        
 .cursor {
     pointer-events: none;
     position: absolute;
@@ -101,6 +125,12 @@ ted-line.counted::before {
         background: #333;
     }
 
+    ted-header {
+        background: #333333;
+        border-bottom: solid 1px #736f6f;
+        color: #7a7a7a;
+    }
+
     .selection {
         background: #aeaebe;
     }
@@ -111,7 +141,11 @@ ted-line.counted::before {
 
     ted-editor {
         color: #ddd;
+    }
+
+    ted-editor > .relative {
         border-left: solid #736f6f 1px;
+        /* color: aliceblue; */
     }
 
     ted-line.counted::before {
