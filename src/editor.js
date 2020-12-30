@@ -17,8 +17,8 @@ export class Ted extends HTMLElement {
 
     constructor() {
         super();
-        this.doc = this.textContent;
-        this.docLines = this.doc.split('\n');
+        /* state */
+        this.docLines = this.textContent.split('\n');
 
         this.setTheme();
 
@@ -49,16 +49,17 @@ export class Ted extends HTMLElement {
 
         window.matchMedia("(prefers-color-scheme: dark)").addListener(e=>this.setTheme(e.matches ? 'dark' : 'light'));
     }
-
+    
+    /* ui */
     mouseMove(e) {
         if (this.selection) {
-            const [line,char] = this.mousePosition(e);
-            this.selection.update(line, char);
+            this.selection.update(...this.mousePosition(e));
 
             let [x, y] = [e.clientX - config.leftMargin, e.clientY];
             
+            /* kink function */
             const kink = (val, span) => (val < 0 || val > span) * (val - span*(val >= span));
-            
+
             x = kink(x, this.viewport.width - config.leftMargin - 20);
             y = kink(y, this.viewport.height);
 
@@ -66,11 +67,13 @@ export class Ted extends HTMLElement {
                          deltaX: x*config.overSelectScrollSpeed});
         }
     }
-
+    
+    /* ui */
     mouseDown(e) {
         if (e.defaultPrevented)
             return;
         const [line,char] = this.mousePosition(e);
+
         this.selection = new Cursel(line,char);
 
         if (!e.ctrlKey || this.cursels.length == 0)
@@ -90,7 +93,8 @@ export class Ted extends HTMLElement {
         }
         this.renderCursels();
     }
-
+    
+    /* ui */
     setTheme(theme) {
         document.head.querySelector('.theme')?.remove();
         const link = document.createElement("link");
@@ -101,6 +105,7 @@ export class Ted extends HTMLElement {
         document.head.appendChild(link);
     }
 
+    /* ui */
     resize() {
         this.computeCharacterSize();
         this.computeViewport();
@@ -112,7 +117,8 @@ export class Ted extends HTMLElement {
 
         this.render();
     }
-
+    
+    /* ui */
     renderCursels() {
         this.relativeDiv.querySelectorAll('.cursor').forEach(e=>e.remove());
         this.relativeDiv.querySelectorAll('.selection').forEach(e=>e.remove());
@@ -143,6 +149,7 @@ export class Ted extends HTMLElement {
         );
     }
 
+    /* logic */
     input(text) {
         this.cursels.forEach((c)=>{
             const [sl,sc,el,ec] = c.orderedPositions();
@@ -168,30 +175,35 @@ export class Ted extends HTMLElement {
         this.render();
         this.fuseCursels();
     }
-
+    
+    /* ui */
     visible(line, char) {
         char ??= this.currentChar;
         return this.currentLine <= line && line <= this.currentLine + this.nbLines && this.currentChar <= char && char <= this.currentChar + this.nbChars;
     }
 
+    /* ui */
     mousePosition(e) {
-        const char = Math.round((e.clientX - 50) / this.charWidth) + this.currentChar;
+        const char = Math.round(Math.max(0, (e.clientX - 50)) / this.charWidth) + this.currentChar;
         let line = Math.max(0, Math.round(((e.clientY + this.position) / this.charHeight) - 0.4));
         return [line = Math.min(line, this.docLines.length - 1), Math.min(char, this.docLines[line].length)];
     }
 
+    /* ui */
     scroll(e) {
         this.position = Math.min(Math.max(0, this.position + (e.deltaY || 0)), this.limit);
         this.hPosition = Math.min(Math.max(0, this.hPosition + (e.deltaX || 0)), Math.max(0, this.maxHorizontalPosition));
         this.render();
     }
 
+    /* ui */
     refocus() {
         if (this.currentLine >= this.docLines.length) {
             this.currentLine = this.docLines.length - 1;
         }
     }
 
+    /* ui */
     render() {
         this.refocus();
 
@@ -209,10 +221,12 @@ export class Ted extends HTMLElement {
         this.updateLongestLine();
     }
 
+    /* ui */
     get limit() {
         return (this.docLines.length - 1) * this.charHeight;
     }
 
+    /* ui */
     prepareDOM() {
         this.innerHTML = "";
 
@@ -228,18 +242,18 @@ export class Ted extends HTMLElement {
             this.lines.push(line);
             this.relativeDiv.appendChild(line);
         }
-
+        
         this.cursels = [];
 
-        this.vScrollbar = new Scrollbar(this.viewport.height,'vertical');
+        this.vScrollbar = new Scrollbar(this.viewport.height, 'vertical');
         this.appendChild(this.vScrollbar);
 
-        this.hScrollbar = new Scrollbar(this.viewport.width,'horizontal');
+        this.hScrollbar = new Scrollbar(this.viewport.width, 'horizontal');
         this.appendChild(this.hScrollbar);
     }
 
+    /* ui */
     computeViewport() {
-        //         const rect = this.parentNode.getBoundingClientRect();
         this.viewport = {
             height: window.innerHeight,
             width: window.innerWidth
@@ -248,6 +262,7 @@ export class Ted extends HTMLElement {
         this.nbChars = Math.floor((window.innerWidth - config.leftMargin) / this.charWidth);
     }
 
+    /* ui */
     computeCharacterSize() {
         const testSpan = document.createElement('span');
         testSpan.innerHTML = 'a';
@@ -258,6 +273,7 @@ export class Ted extends HTMLElement {
         testSpan.remove();
     }
 
+    /* ui */
     keyDown(e) {
         if (e.defaultPrevented)
             return;
@@ -327,6 +343,7 @@ export class Ted extends HTMLElement {
         }
     }
 
+    /* logic */
     textFromCursel(cursel) {
         let text = "";
         const [sl,sc,el,ec] = cursel.orderedPositions();
@@ -342,6 +359,7 @@ export class Ted extends HTMLElement {
         return text;
     }
 
+    /* ui */
     async updateLongestLine() {
         let max = 0;
         for (const line of this.docLines)
@@ -351,6 +369,7 @@ export class Ted extends HTMLElement {
         this.hScrollbar.update(this.hPosition, this.maxHorizontalPosition);
     }
 
+    /* logic */
     lineContext(i) {
         return {
             before: this.docLines[i - 1]?.length,
@@ -360,6 +379,7 @@ export class Ted extends HTMLElement {
         };
     }
 
+    /* logic */
     async fuseCursels() {
         const toRemove = new Set();
         for (let i = 1; i < this.cursels.length; i++) {

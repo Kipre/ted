@@ -7,13 +7,13 @@ export class Options extends HTMLElement {
     constructor(viewport) {
         super();
 
-        const shadow = this.attachShadow({mode: 'open'});
+//         const shadow = this.attachShadow({mode: 'open'});
         
         const background = document.createElement('div');
         background.style.height = `${viewport.height}px`;
         background.style.width = `${viewport.width + 50}px`;
         background.style.left = '-50px';
-        shadow.appendChild(background);
+        this.appendChild(background);
 
         this.line = document.createElement('input');
         this.line.setAttribute('type', 'text');

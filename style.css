@@ -54,15 +54,19 @@ ted-line {
 }
 
 ted-options {
-    display: block;
-    user-select: all;
-    pointer-events: all;
+    /* display: block; */
+    /* user-select: all; */
+    /* pointer-events: all; */
 }
 
 ted-options > div {
     position: absolute;
     background: black;
     opacity: 0.7
+}
+
+ted-options > div > input {
+    opacity: 1;
 }
 
 .selection {
