@@ -23,34 +23,33 @@ ted-editor {
     font-family: 'JetBrains Mono', monospace;
     font-weight: 100;
     counter-reset: line;
+    user-select: none;
 }
-
-
 
 ted-editor > .relative {
     position: relative;
     margin: 0 0 0 50px;
     display: inline-block;
     cursor: text;
-    user-select: none;
     border-left: solid 1px #c9c9c9;
 }
 
 ted-header {
     position: relative;
-    display: block;
+    display: inline-block;
     border-bottom: solid 1px #c9c9c9;
     cursor: default;
     background: white;
     z-index: 1;
-    overscroll-behavior-x: default;
+    min-width:100%;
+    /* overscroll-behavior-x: auto; */
 }
 
 ted-header > span {
     line-height: 30px;
     font-size: 13px;
     font-family: monospace;
-    margin: 20px;
+    margin: 15px;
 }
 
 ted-header > .active {

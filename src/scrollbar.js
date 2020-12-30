@@ -1,4 +1,4 @@
-import {config}  from './config.js';
+import {config} from './config.js';
 
 const scrollConfig = {
     thickness: 10,
@@ -7,29 +7,41 @@ const scrollConfig = {
         viewAdjustment: -67,
         thickness: 'height',
         offset: 'bottom',
-        setLength: (here, length)=>{here.style.width = `${length}px`},
-        setPosition: (here, pos)=>{here.style.left = `${pos + 52}px`},
+        setLength: (here,length)=>{
+            here.style.width = `${length}px`
+        }
+        ,
+        setPosition: (here,pos)=>{
+            here.style.left = `${pos + 52}px`
+        }
+        ,
         axis: 'X'
     },
     vertical: {
         viewAdjustment: -4,
         offset: 'right',
         thickness: 'width',
-        setLength: (here, length)=>{here.style.height = `${length}px`},
-        setPosition: (here, pos)=>{here.style.top = `${pos + 2 + config.headerHeight}px`},
+        setLength: (here,length)=>{
+            here.style.height = `${length}px`
+        }
+        ,
+        setPosition: (here,pos)=>{
+            here.style.top = `${pos + 2 + config.headerHeight}px`
+        }
+        ,
         axis: 'Y'
     }
 }
 
 export class Scrollbar extends HTMLElement {
-    constructor(viewSize, orientation) {
+    constructor(orientation) {
         super();
         const orient = scrollConfig[orientation];
-        this.viewSize = viewSize + (orient.viewAdjustment || 0);
+        this.viewSize = 0;
         this.style[orient.thickness] = `${scrollConfig.thickness}px`;
         this.style[orient.offset] = `${scrollConfig.offset}px`;
 
-        this.update = (p, mp) => {
+        this.update = (p,mp)=>{
             if (mp == 0) {
                 this.hidden = true;
             } else {
@@ -42,6 +54,10 @@ export class Scrollbar extends HTMLElement {
             }
         }
 
+        this.setViewSize = size=>{
+            this.viewSize = size + (orient.viewAdjustment || 0);
+        }
+
         this.moving = false;
 
         this.onmousedown = (e)=>{
@@ -51,14 +67,18 @@ export class Scrollbar extends HTMLElement {
 
         window.addEventListener('mousemove', e=>{
             if (this.moving)
-                this.parentNode.scroll({["delta" + orient.axis]: this.maxPosition * e["movement" + orient.axis]/(this.viewSize - this.length)});
-        });
+                this.parentNode.scroll({
+                    ["delta" + orient.axis]: this.maxPosition * e["movement" + orient.axis] / (this.viewSize - this.length)
+                });
+        }
+        );
 
         window.addEventListener('mouseup', ()=>{
             this.moving = false
-        })
+        }
+        )
     }
+
 }
 
 customElements.define('ted-scrollbar', Scrollbar);
-

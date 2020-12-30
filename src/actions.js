@@ -5,15 +5,15 @@ import {config} from './config.js';
 export const defineActions = (ted)=>{
     return {
         backspace: ()=>{
-            ted.cursels.filter(c=>c.isCursor()).forEach(c=>c.moveSelection('left', ted.text.lineContext(c.l)));
+            ted.state.cursels.filter(c=>c.isCursor()).forEach(c=>c.moveSelection('left', ted.state.lineContext(c.l)));
             ted.input('');
         }
         ,
         selectall: ()=>{
             const sel = new Cursel(0,0);
-            const len = ted.text.nbLines - 1;
-            sel.update(len, ted.text.length(len));
-            ted.cursels = [sel];
+            const len = ted.state.nbLines - 1;
+            sel.update(len, ted.state.length(len));
+            ted.state.cursels = [sel];
             ted.renderCursels();
         }
         ,
@@ -23,7 +23,7 @@ export const defineActions = (ted)=>{
             if (option)
                 option.remove();
             else {
-                ted.cursels = [];
+                ted.state.cursels = [];
                 ted.appendChild(new Options(ted.viewport));
             }
         }
@@ -31,8 +31,8 @@ export const defineActions = (ted)=>{
         moveselect: e=>{
             e.preventDefault();
             if (e.key.includes("Arrow")) {
-                ted.cursels.forEach(c=>{
-                    c.moveSelection(e.key.slice(5).toLowerCase(), ted.text.lineContext(c.l));
+                ted.state.cursels.forEach(c=>{
+                    c.moveSelection(e.key.slice(5).toLowerCase(), ted.state.lineContext(c.l));
                 }
                 );
                 ted.render();
@@ -57,11 +57,14 @@ export const defineActions = (ted)=>{
         ,
         open: async e=>{
             e.preventDefault();
-            const [fileHandle] = await window.showOpenFilePicker();
-            console.log(fileHandle);
-            const file = await fileHandle.getFile();
-            const contents = await file.text();
-            ted.text.addFile(fileHandle.name, contents);
+            try {
+                const [fileHandle] = await window.showOpenFilePicker();
+                const file = await fileHandle.getFile();
+                const contents = await file.text();
+                ted.state.addFile(fileHandle.name, contents);
+            } catch (e) {
+                return;
+            }
         }
         ,
         tab: (e)=>{

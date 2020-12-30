@@ -4,6 +4,9 @@ export class State {
         this.lines = text.split('\n');
         this.name = name || 'untitled';
         this.saved = name ? true : false;
+        this.cursels = [];
+        this.position = 0;
+        this.hPosition = 0;
     }
 
     element() {
@@ -22,27 +25,45 @@ export class State {
 
 }
 
-export class OpenFileManager extends HTMLElement {
-    constructor(text, fileChanged) {
+export class StateManager extends HTMLElement {
+    constructor(text, tedRender) {
         super();
         this.instances = [new State(text || '')];
         this.active = 0;
-        this.fileChanged = fileChanged;
+        this.tedRender = tedRender;
+        this.barPosition = 0;
+        this.addEventListener('wheel', e=>this.scroll(e), {
+            passive: true
+        });
+    }
+
+    scroll(e) {
+        const deltaX = e.deltaX || e.deltaY;
+        this.barPosition = Math.max(0, Math.min(this.barPosition + deltaX, this.offsetWidth - this.width));
+        console.log(this.barPosition, deltaX, this.offsetWidth, this.width)
+        this.style.left = `-${this.barPosition}px`;
+    }
+
+    setWidth(width) {
+        this.width = width;
+        this.scroll({deltaX: 0, deltaY: 0});
     }
 
     render() {
         this.innerHTML = '';
+        this.style.left = `-${this.barPosition}px`;
         this.instances.forEach((t,i)=>{
-           const item = t.element();
+            const item = t.element();
             if (i == this.active)
                 item.classList.add('active');
             item.onclick = e=>{
                 e.preventDefault();
                 this.active = i;
-                this.fileChanged();
+                this.tedRender();
             }
             this.appendChild(item);
-        });
+        }
+        );
     }
 
     connectedCallback() {
@@ -53,10 +74,23 @@ export class OpenFileManager extends HTMLElement {
         return this._act;
     }
 
+    saveState() {
+        if (this._act !== undefined) {
+            this.instances[this._act].position = this.position;
+            this.instances[this._act].hPosition = this.hPosition;
+            this.instances[this._act].cursels = this.cursels;
+        }
+    }
+
     set active(i) {
+        this.saveState();
         this._act = i;
         this.lines = this.instances[i].lines;
+        this.cursels = this.instances[i].cursels;
+        this.position = this.instances[i].position;
+        this.hPosition = this.instances[i].hPosition;
         this.render();
+        this.tedRender?.();
     }
 
     get nbLines() {
@@ -99,10 +133,10 @@ export class OpenFileManager extends HTMLElement {
 
     addFile(name, content) {
         const len = this.instances.length;
-        this.instances.push(new State(content, name));
+        this.instances.push(new State(content,name));
         this.active = len;
-        this.fileChanged();
+        this.tedRender();
     }
 }
 
-customElements.define('ted-header', OpenFileManager);
+customElements.define('ted-header', StateManager);
