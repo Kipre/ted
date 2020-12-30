@@ -1,8 +1,4 @@
-export class Text {
-
-    observedAtributes() {
-        return ['saved'];
-    }
+export class State {
 
     constructor(text, name) {
         this.lines = text.split('\n');
@@ -26,10 +22,10 @@ export class Text {
 
 }
 
-export class TextManager extends HTMLElement {
+export class OpenFileManager extends HTMLElement {
     constructor(text, fileChanged) {
         super();
-        this.instances = [new Text(text || '')];
+        this.instances = [new State(text || '')];
         this.active = 0;
         this.fileChanged = fileChanged;
     }
@@ -103,10 +99,10 @@ export class TextManager extends HTMLElement {
 
     addFile(name, content) {
         const len = this.instances.length;
-        this.instances.push(new Text(content, name));
+        this.instances.push(new State(content, name));
         this.active = len;
         this.fileChanged();
     }
 }
 
-customElements.define('ted-header', TextManager);
+customElements.define('ted-header', OpenFileManager);

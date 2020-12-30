@@ -2,7 +2,7 @@ import {Cursel, before, drawCursel} from './cursel.js';
 import {Line} from './line.js';
 import {Options} from './options.js';
 import {Scrollbar} from './scrollbar.js';
-import {TextManager} from './editor.js';
+import {OpenFileManager} from './editor.js';
 import {defineActions} from './actions.js';
 import {keyToAction} from './keymap.js';
 import {config} from './config.js';
@@ -12,7 +12,7 @@ export class Ted extends HTMLElement {
     constructor() {
         super();
 
-        this.text = new TextManager(this.textContent, ()=>this.render());
+        this.text = new OpenFileManager(this.textContent, ()=>this.render());
         this.actions = defineActions(this);
 
         this.setTheme();
@@ -23,24 +23,20 @@ export class Ted extends HTMLElement {
 
         window.addEventListener('keydown', e=>this.keyDown(e));
 
-        this.onmousedown = e=>this.mouseDown(e);
-
         window.addEventListener('mousemove', e=>this.mouseMove(e));
 
-        window.addEventListener('mouseup', (e)=>{
+        window.addEventListener('mouseup', e=>{
             this.selection?.tighten();
             this.selection = null;
             this.fuseCursels();
-        }
-        );
+        });
 
         window.addEventListener('resize', e=>this.resize());
 
         window.addEventListener('blur', e=>{
             this.cursels = [];
             this.render();
-        }
-        );
+        });
 
         window.matchMedia("(prefers-color-scheme: dark)").addListener(e=>this.setTheme(e.matches ? 'dark' : 'light'));
     }
@@ -197,6 +193,7 @@ export class Ted extends HTMLElement {
         this.relativeDiv = document.createElement('div');
         this.relativeDiv.classList.add('relative');
         this.relativeDiv.style.height = `${this.viewport.height + 20}px`;
+        this.relativeDiv.onmousedown = (e)=>this.mouseDown(e);
         this.appendChild(this.relativeDiv);
 
         this.lines = [];

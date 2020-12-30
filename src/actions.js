@@ -58,6 +58,7 @@ export const defineActions = (ted)=>{
         open: async e=>{
             e.preventDefault();
             const [fileHandle] = await window.showOpenFilePicker();
+            console.log(fileHandle);
             const file = await fileHandle.getFile();
             const contents = await file.text();
             ted.text.addFile(fileHandle.name, contents);
