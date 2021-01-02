@@ -67,6 +67,12 @@ export class State {
 export class StateManager extends HTMLElement {
     constructor(tedRender) {
         super();
+        //         const stored = window.localStorage.getItem('ted-state-instances');
+        //         if (stored) {
+        //             this.instances = this.restoreInstances(window.localStorage.getItem('ted-state-instances'))
+        //         } else {
+        //             this.instances = [new State(text,'untitled')]
+        //         }
         this.tedRender = tedRender;
         this.barPosition = 0;
         this.lines = [''];
@@ -82,9 +88,8 @@ export class StateManager extends HTMLElement {
         request.onupgradeneeded = e=>{
             const db = e.target.result;
             const store = db.createObjectStore("states");
-            store.add([new State(text,'untitled')].map(s=>s.toObject()), 'instances');
+            store.add([new State()].map(s=>s.toObject()), 'instances');
             store.add(0, 'active');
-            console.log("store initialized");
         }
 
         request.onsuccess = e=>{
@@ -156,11 +161,13 @@ export class StateManager extends HTMLElement {
     }
 
     close(i) {
-        if (!this.current.saved) {
+        if (!this.current.saved && !(this.lines.length == 1 && this.lines == '')) {
             if (!window.confirm("Are you sure you want to close this file without saving?"))
                 return;
         }
         this.instances.splice(i, 1);
+        if (this.instances.length == 0)
+            this.instances = [new State()];
         this._act = Math.max(0, Math.min(this.instances.length - 1, i));
         this.updateBinding(this._act);
     }
@@ -174,17 +181,14 @@ export class StateManager extends HTMLElement {
     }
 
     saveState() {
-        if (this._act !== undefined) {
+//         if (this._act !== undefined) {
             this.instances[this._act].position = this.position;
             this.instances[this._act].hPosition = this.hPosition;
             this.instances[this._act].cursels = this.cursels;
-        }
+//         }
     }
 
     updateBinding(i) {
-        if (this.instances.length == 0) {
-            this.instances = [new State()]
-        }
         this.lines = this.instances[i].lines;
         this.cursels = this.instances[i].cursels;
         this.position = this.instances[i].position;
@@ -194,7 +198,8 @@ export class StateManager extends HTMLElement {
     }
 
     set active(i) {
-        this.saveState();
+        if (this._act !== undefined)
+            this.saveState();
         this._act = i;
         this.updateBinding(i);
     }
@@ -238,6 +243,7 @@ export class StateManager extends HTMLElement {
     }
 
     async addFile(handle) {
+        
         this.instances.push(handle ? await State.fromHandle(handle) : new State());
         this.active = this.instances.length - 1;
         this.tedRender();
