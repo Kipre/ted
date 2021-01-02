@@ -41,8 +41,7 @@ ted-header {
     cursor: default;
     background: white;
     z-index: 1;
-    min-width:100%;
-    /* overscroll-behavior-x: auto; */
+    min-width: 100%;
 }
 
 ted-header > span {
@@ -52,8 +51,13 @@ ted-header > span {
     margin: 15px;
 }
 
+ted-header > span:not(.active):hover {
+    font-weight: 600;
+    border-bottom: solid 2px #aff1c7;
+}
+
 ted-header > .active {
-    border-bottom: solid 3px #694391
+    border-bottom: solid 3px #e2c6ff;
 }
 
 ted-header > .unsaved::before {
@@ -76,11 +80,6 @@ ted-line {
     float: left;
 }
 
-ted-options {
-    /* display: block; */
-    /* user-select: all; */
-    /* pointer-events: all; */
-}
 
 ted-options > div {
     position: absolute;
@@ -88,19 +87,13 @@ ted-options > div {
     opacity: 0.7
 }
 
-ted-options > div > input {
-    opacity: 1;
-}
-
 .selection {
     pointer-events: none;
     background: #8ca8e8;
     opacity: 0.3;
     position: absolute;
-    /* z-index: -1; */
-/*     border-radius: 0px 3px 3px 3px; */
 }
-        
+
 .cursor {
     pointer-events: none;
     position: absolute;
@@ -144,7 +137,6 @@ ted-line.counted::before {
 
     ted-editor > .relative {
         border-left: solid #736f6f 1px;
-        /* color: aliceblue; */
     }
 
     ted-line.counted::before {
@@ -153,5 +145,18 @@ ted-line.counted::before {
 
     ted-scrollbar {
         background: #525252;
+    }
+
+    ted-header > span:not(.active):hover {
+        font-weight: 600;
+        border-bottom: solid 2px #2f6442;
+    }
+
+    ted-header > span.unsaved::before {
+        content: "\2022"
+    }
+
+    ted-header > .active {
+        border-bottom: solid 3px #694391
     }
 }

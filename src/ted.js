@@ -2,7 +2,7 @@ import {Cursel, before, drawCursel} from './cursel.js';
 import {Line} from './line.js';
 import {Options} from './options.js';
 import {Scrollbar} from './scrollbar.js';
-import {StateManager} from './editor.js';
+import {StateManager} from './state.js';
 import {defineActions} from './actions.js';
 import {keyToAction} from './keymap.js';
 import {config} from './config.js';
@@ -175,6 +175,7 @@ export class Ted extends HTMLElement {
     }
 
     render() {
+//         console.time('render')
         this.refocus();
 
         this.style.counterSet = `line ${this.currentLine}`;
@@ -189,6 +190,7 @@ export class Ted extends HTMLElement {
         this.renderCursels();
 
         this.updateLongestLine();
+//         console.timeEnd('render')
     }
 
     get limit() {

@@ -4,7 +4,8 @@ import {config} from './config.js';
 
 export const defineActions = (ted)=>{
     return {
-        backspace: ()=>{
+        backspace: e=>{
+            e.preventDefault();
             ted.state.cursels.filter(c=>c.isCursor()).forEach(c=>c.moveSelection('left', ted.state.lineContext(c.l)));
             ted.input('');
         }
@@ -28,15 +29,23 @@ export const defineActions = (ted)=>{
             }
         }
         ,
-        moveselect: e=>{
+        moveselection: e=>{
             e.preventDefault();
-            if (e.key.includes("Arrow")) {
-                ted.state.cursels.forEach(c=>{
-                    c.moveSelection(e.key.slice(5).toLowerCase(), ted.state.lineContext(c.l));
-                }
-                );
-                ted.render();
+            ted.state.cursels.forEach(c=>{
+                c.moveSelection(e.key.slice(5).toLowerCase(), ted.state.lineContext(c.l));
             }
+            );
+            ted.render();
+        }
+        ,
+        move: e=>{
+            e.preventDefault();
+            ted.state.cursels.forEach(c=>{
+                c.moveCursor(e.key.slice(5).toLowerCase(), ted.state.lineContext(c.l));
+            }
+            );
+            ted.render();
+
         }
         ,
         letter: e=>{
@@ -59,10 +68,9 @@ export const defineActions = (ted)=>{
             e.preventDefault();
             try {
                 const [fileHandle] = await window.showOpenFilePicker();
-                const file = await fileHandle.getFile();
-                const contents = await file.text();
-                ted.state.addFile(fileHandle.name, contents);
+                ted.state.addFile(fileHandle);
             } catch (e) {
+                console.log(e);
                 return;
             }
         }
@@ -74,6 +82,16 @@ export const defineActions = (ted)=>{
         ,
         newline: ()=>{
             ted.input('\n');
+        }
+        ,
+        newfile: e=>{
+            e.preventDefault();
+            ted.state.addFile();
+        }
+        ,
+        save: e=>{
+            e.preventDefault();
+            ted.state.saveFile(ted.state.current);
         }
         ,
         nothing: ()=>{}

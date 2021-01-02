@@ -2,8 +2,12 @@ export function keyToAction(e) {
     if (e.ctrlKey && e.altKey && e.shiftKey) {
 
     } else if (e.ctrlKey && e.shiftKey) {
-        if (e.key == 'P')
+        switch(e.key) {
+        case('P'):
             return 'togglecommandline';
+        case('N'):
+            return 'newfile';
+        }
     } else if (e.ctrlKey) {
         switch(e.key) {
         case('c'):
@@ -17,10 +21,21 @@ export function keyToAction(e) {
         case('s'):
             return 'save';
         }
-    } else {
-        if (e.key.length == 1) {
+    } else if (e.shiftKey) {
+        if (e.key.length == 1)
             return 'letter';
+        if (e.key.includes('Arrow'))
+            return 'moveselection'
+    } else if (e.altKey) {
+        switch(e.key) {
+        case('n'):
+            return 'newfile';
         }
+    } else {
+        if (e.key.length == 1)
+            return 'letter';
+        if (e.key.includes('Arrow'))
+            return 'move'
         switch(e.key) {
         case('Backspace'):
             return 'backspace';

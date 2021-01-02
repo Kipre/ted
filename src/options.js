@@ -6,8 +6,6 @@ const config = {
 export class Options extends HTMLElement {
     constructor(viewport) {
         super();
-
-//         const shadow = this.attachShadow({mode: 'open'});
         
         const background = document.createElement('div');
         background.style.height = `${viewport.height}px`;
