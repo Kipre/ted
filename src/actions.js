@@ -81,7 +81,8 @@ export const defineActions = (ted)=>{
         }
         ,
         newline: ()=>{
-            ted.input('\n');
+            const newLine = '\n' + ' '.repeat(config.repeatIndentation * ted.state.indentation(ted.state.cursels[0].l));
+            ted.input(newLine);
         }
         ,
         newfile: e=>{
@@ -94,6 +95,13 @@ export const defineActions = (ted)=>{
             ted.state.saveFile(ted.state.current);
         }
         ,
+        openfolder: e=>{
+            ted.state.openFolder();
+        },
+        cut: e=>{
+            navigator.clipboard.writeText(ted.textFromCursel(0));
+            ted.input('');
+        },
         nothing: ()=>{}
     }
 }

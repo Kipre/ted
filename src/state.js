@@ -1,5 +1,7 @@
 import {Cursel} from './cursel.js';
 
+const indentRegex = /(^[ \t]*)\S?/;
+
 export class State {
 
     constructor(text='') {
@@ -53,7 +55,7 @@ export class State {
         const newState = new State();
         newState.lines = o.text.split('\n');
         newState.handle = o.handle;
-        newState.saved = o.saved == 'true';
+        newState.saved = o.saved;
         newState.cursels = [];
         newState.position = o.pos;
         newState.hPosition = o.hpos;
@@ -63,14 +65,8 @@ export class State {
 }
 
 export class StateManager extends HTMLElement {
-    constructor(text, tedRender) {
+    constructor(tedRender) {
         super();
-        //         const stored = window.localStorage.getItem('ted-state-instances');
-        //         if (stored) {
-        //             this.instances = this.restoreInstances(window.localStorage.getItem('ted-state-instances'))
-        //         } else {
-        //             this.instances = [new State(text,'untitled')]
-        //         }
         this.tedRender = tedRender;
         this.barPosition = 0;
         this.lines = [''];
@@ -85,23 +81,26 @@ export class StateManager extends HTMLElement {
 
         request.onupgradeneeded = e=>{
             const db = e.target.result;
-            const store = db.createObjectStore("states", {
-                autoIncrement: true
-            });
-            store.add([new State(text,'untitled')].map(s=>s.toObject()), 'default');
+            const store = db.createObjectStore("states");
+            store.add([new State(text,'untitled')].map(s=>s.toObject()), 'instances');
+            store.add(0, 'active');
             console.log("store initialized");
         }
 
         request.onsuccess = e=>{
             self.db = e.target.result;
-            self.db.transaction("states").objectStore("states").get('default').onsuccess = function(event) {
-                self.instances = event.target.result.map(o=>State.fromObject(o));
-                self.active = 0;
+            const store = self.db.transaction("states").objectStore("states");
+            store.get('instances').onsuccess = e => {
+                self.instances = e.target.result.map(o=>State.fromObject(o));
+                store.get('active').onsuccess = e=> {
+                    self.active = e.target.result;
+                }
             }
         }
 
         window.onbeforeunload = ()=>{
             if (this.db) {
+                this.saveState();
                 this.storeStates();
             } else if (this.instances.some(s=>!s.saved)) {
                 return true;
@@ -111,7 +110,9 @@ export class StateManager extends HTMLElement {
     }
 
     storeStates() {
-        this.db.transaction(["states"], "readwrite").objectStore("states").put(this.instances.map(s=>s.toObject()), 'default');
+        const store = this.db.transaction(["states"], "readwrite").objectStore("states");
+        store.put(this.instances.map(s=>s.toObject()), 'instances');
+        store.put(this._act, 'active');
     }
 
     scroll(e) {
@@ -157,11 +158,11 @@ export class StateManager extends HTMLElement {
     close(i) {
         if (!this.current.saved) {
             if (!window.confirm("Are you sure you want to close this file without saving?"))
-            return;
+                return;
         }
-            this.instances.splice(i, 1);
-            this._act = Math.max(0, Math.min(this.instances.length - 1, i));
-            this.updateBinding(this._act);
+        this.instances.splice(i, 1);
+        this._act = Math.max(0, Math.min(this.instances.length - 1, i));
+        this.updateBinding(this._act);
     }
 
     get current() {
@@ -237,9 +238,8 @@ export class StateManager extends HTMLElement {
     }
 
     async addFile(handle) {
-        const len = this.instances.length;
         this.instances.push(handle ? await State.fromHandle(handle) : new State());
-        this.active = len;
+        this.active = this.instances.length - 1;
         this.tedRender();
     }
 
@@ -249,7 +249,7 @@ export class StateManager extends HTMLElement {
             await writable.write(state.text());
             await writable.close();
         } else {
-            this.saveFileAs(state);
+            await this.saveFileAs(state);
         }
         state.saved = true;
         this.render();
@@ -262,7 +262,19 @@ export class StateManager extends HTMLElement {
             }]
         };
         state.handle = await window.showSaveFilePicker(options);
-        this.saveFile(state);
+        await this.saveFile(state);
+    }
+
+    indentation(i) {
+        const res = indentRegex.exec(this.lines[i]);
+        return res[1].length;
+    }
+    
+    async openFolder() {
+        const dirHandle = await window.showDirectoryPicker();
+        for await (const entry of dirHandle.values()) {
+            console.log(entry.kind, entry.name);
+        }
     }
 }
 

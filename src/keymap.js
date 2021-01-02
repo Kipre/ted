@@ -14,6 +14,8 @@ export function keyToAction(e) {
             return 'copy';
         case('v'):
             return 'paste';
+        case('x'):
+            return 'cut';
         case('a'):
             return 'selectall';
         case('o'):
@@ -30,6 +32,8 @@ export function keyToAction(e) {
         switch(e.key) {
         case('n'):
             return 'newfile';
+        case('o'):
+            return 'openfolder';
         }
     } else {
         if (e.key.length == 1)

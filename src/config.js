@@ -9,4 +9,5 @@ export const config = {
     /* functionality */
     brakeLines: false,
     tabSize: 4,
+    repeatIndentation: true,
 }

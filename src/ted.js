@@ -12,7 +12,7 @@ export class Ted extends HTMLElement {
     constructor() {
         super();
 
-        this.state = new StateManager(this.textContent, ()=>this.refreshPositions());
+        this.state = new StateManager(()=>this.refreshPositions());
         this.actions = defineActions(this);
 
         this.setTheme();
@@ -109,14 +109,8 @@ export class Ted extends HTMLElement {
     }
 
     resize() {
-//         const [line, char] = [this.currentLine, this.currentChar];
-
         this.computeCharacterSize();
         this.computeViewport();
-
-//         this.currentLine = line;
-//         this.currentChar = char;
-
         this.assignSizes();
         this.render();
     }
@@ -182,7 +176,7 @@ export class Ted extends HTMLElement {
         this.relativeDiv.style.top = `-${this.currentDelta}px`;
 
         for (let i = 0; i < this.nbLines; i++) {
-            this.lines[i].content = this.state.lines[i + this.currentLine]?.slice(this.currentChar) ?? String.fromCodePoint(0);
+            this.lines[i].content = this.state.lines[i + this.currentLine]?.slice(this.currentChar, this.currentChar + this.nbChars) ?? String.fromCodePoint(0);
         }
 
         this.vScrollbar.update(this.position, this.limit);
@@ -277,8 +271,8 @@ export class Ted extends HTMLElement {
         } else {
             for (let i = sl; i <= el; ++i) {
                 const startChar = i == sl ? sc : 0
-                const endChar = i == el ? ec : this.text.lines[i].length + 1;
-                text += (this.text.lines[i] + '\n').slice(startChar, endChar);
+                const endChar = i == el ? ec : this.state.lines[i].length + 1;
+                text += (this.state.lines[i] + '\n').slice(startChar, endChar);
             }
         }
         return text;
