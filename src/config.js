@@ -7,7 +7,7 @@ export const config = {
     overSelectScrollSpeed: 0.5,
     headerHeight: 30,
     /* functionality */
-    brakeLines: false,
+    breakLines: true,
     tabSize: 4,
     repeatIndentation: true,
 }

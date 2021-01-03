@@ -1,6 +1,18 @@
 import {Cursel} from './cursel.js';
+import {config} from './config.js';
 
 const indentRegex = /(^[ \t]*)\S?/;
+
+function chunkSubstr(str, size) {
+    const numChunks = Math.ceil(str.length / size);
+    const chunks = new Array(numChunks);
+
+    for (let i = 0, o = 0; i < numChunks; ++i, o += size) {
+        chunks[i] = str.substr(o, size);
+    }
+
+    return chunks;
+}
 
 export class State {
 
@@ -14,6 +26,10 @@ export class State {
 
     element() {
         const item = document.createElement('span');
+        item.ondrag = e=>{
+            console.log(e.layerX, e.layerY)
+        };
+        item.setAttribute('draggable', 'true');
         item.textContent = this.handle?.name || 'untitled';
         this.domElement = item;
         return item;
@@ -65,14 +81,9 @@ export class State {
 }
 
 export class StateManager extends HTMLElement {
-    constructor(tedRender) {
+    constructor(tedRender, nbChars) {
         super();
-        //         const stored = window.localStorage.getItem('ted-state-instances');
-        //         if (stored) {
-        //             this.instances = this.restoreInstances(window.localStorage.getItem('ted-state-instances'))
-        //         } else {
-        //             this.instances = [new State(text,'untitled')]
-        //         }
+        this.nbChars = nbChars;
         this.tedRender = tedRender;
         this.barPosition = 0;
         this.lines = [''];
@@ -95,9 +106,9 @@ export class StateManager extends HTMLElement {
         request.onsuccess = e=>{
             self.db = e.target.result;
             const store = self.db.transaction("states").objectStore("states");
-            store.get('instances').onsuccess = e => {
+            store.get('instances').onsuccess = e=>{
                 self.instances = e.target.result.map(o=>State.fromObject(o));
-                store.get('active').onsuccess = e=> {
+                store.get('active').onsuccess = e=>{
                     self.active = e.target.result;
                 }
             }
@@ -141,7 +152,6 @@ export class StateManager extends HTMLElement {
             const item = t.element();
             if (i == this.active)
                 item.classList.add('active');
-
             if (!t.saved)
                 item.classList.add('unsaved');
             item.onclick = e=>{
@@ -181,11 +191,11 @@ export class StateManager extends HTMLElement {
     }
 
     saveState() {
-//         if (this._act !== undefined) {
-            this.instances[this._act].position = this.position;
-            this.instances[this._act].hPosition = this.hPosition;
-            this.instances[this._act].cursels = this.cursels;
-//         }
+        //         if (this._act !== undefined) {
+        this.instances[this._act].position = this.position;
+        this.instances[this._act].hPosition = this.hPosition;
+        this.instances[this._act].cursels = this.cursels;
+        //         }
     }
 
     updateBinding(i) {
@@ -243,7 +253,7 @@ export class StateManager extends HTMLElement {
     }
 
     async addFile(handle) {
-        
+
         this.instances.push(handle ? await State.fromHandle(handle) : new State());
         this.active = this.instances.length - 1;
         this.tedRender();
@@ -275,10 +285,10 @@ export class StateManager extends HTMLElement {
         const res = indentRegex.exec(this.lines[i]);
         return res[1].length;
     }
-    
+
     async openFolder() {
         const dirHandle = await window.showDirectoryPicker();
-        for await (const entry of dirHandle.values()) {
+        for await(const entry of dirHandle.values()) {
             console.log(entry.kind, entry.name);
         }
     }

@@ -12,13 +12,14 @@ export class Ted extends HTMLElement {
     constructor() {
         super();
 
-        this.state = new StateManager(()=>this.refreshPositions());
         this.actions = defineActions(this);
 
         this.setTheme();
 
         this.computeCharacterSize();
         this.computeViewport();
+
+        this.state = new StateManager(()=>this.refreshPositions(),this.nbChars);
 
         this.position = 0;
         this.hPosition = 0;
@@ -35,14 +36,15 @@ export class Ted extends HTMLElement {
             this.selection?.tighten();
             this.selection = null;
             this.fuseCursels();
-        });
+        }
+        );
 
         window.addEventListener('resize', e=>this.resize());
 
-//         window.addEventListener('blur', e=>{
-//             this.state.cursels = [];
-//             this.render();
-//         });
+        //         window.addEventListener('blur', e=>{
+        //             this.state.cursels = [];
+        //             this.render();
+        //         });
 
         window.matchMedia("(prefers-color-scheme: dark)").addListener(e=>this.setTheme(e.matches ? 'dark' : 'light'));
     }
@@ -169,22 +171,27 @@ export class Ted extends HTMLElement {
     }
 
     render() {
-//         console.time('render')
+        //         console.time('render')
         this.refocus();
 
-        this.style.counterSet = `line ${this.currentLine}`;
         this.relativeDiv.style.top = `-${this.currentDelta}px`;
 
-        for (let i = 0; i < this.nbLines; i++) {
-            this.lines[i].content = this.state.lines[i + this.currentLine]?.slice(this.currentChar, this.currentChar + this.nbChars) ?? String.fromCodePoint(0);
-        }
+        this.populateLines(config.breakLines);
 
         this.vScrollbar.update(this.position, this.limit);
 
         this.renderCursels();
 
         this.updateLongestLine();
-//         console.timeEnd('render')
+        //         console.timeEnd('render')
+    }
+
+    populateLines(breakLines) {
+        this.style.counterSet = `line ${this.currentLine}`;
+        for (let i = 0; i < this.nbLines; i++) {
+            const content = this.state.lines[i + this.currentLine]?.slice(this.currentChar, this.currentChar + this.nbChars) ?? String.fromCodePoint(0)
+            this.lines[i].content = content;
+        }
     }
 
     get limit() {
@@ -207,7 +214,9 @@ export class Ted extends HTMLElement {
         this.appendChild(this.relativeDiv);
         /* callbacks */
         this.relativeDiv.onmousedown = (e)=>this.mouseDown(e);
-        this.relativeDiv.addEventListener('wheel', e=>this.scroll(e), {passive: true});
+        this.relativeDiv.addEventListener('wheel', e=>this.scroll(e), {
+            passive: true
+        });
 
         /* scrollbars */
         this.vScrollbar = new Scrollbar('vertical');
@@ -217,9 +226,9 @@ export class Ted extends HTMLElement {
     }
 
     assignSizes() {
-//         this.state.style.height = `${config.headerHeight}px`;
+        //         this.state.style.height = `${config.headerHeight}px`;
         this.state.setWidth(this.viewport.width);
-        
+
         this.relativeDiv.style.height = `${this.viewport.height + 20}px`;
 
         this.relativeDiv.querySelectorAll('ted-line')?.forEach(l=>l.remove());
@@ -228,7 +237,7 @@ export class Ted extends HTMLElement {
         for (let i = 0; i < this.nbLines; i++) {
             const line = new Line(String.fromCodePoint(0));
             line.style.height = `${this.charHeight}px`;
-            line.style.width = `${this.charWidth*this.nbChars}px`;
+            line.style.width = `${this.charWidth * this.nbChars}px`;
             this.lines.push(line);
             this.relativeDiv.appendChild(line);
         }

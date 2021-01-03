@@ -20,6 +20,11 @@ export class Line extends HTMLElement {
         return this.textContent;
     }
 
+//     setLine(line, count) {
+//         this.textContent = line;
+//         count ? this.classList.add('counted') : this.classList.remove('counted');
+//     }
+
     set content(val) {
         if (val?.codePointAt(0) == 0) {
             this.innerHTML = '';
