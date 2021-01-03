@@ -51,9 +51,9 @@ ted-header > span {
     margin: 15px;
 }
 
-/* ted-header > span [draggable=true] {
-  cursor: move;
-} */
+nothing {
+    color: #b22562;
+}
 
 ted-header > span:not(.active):hover {
     font-weight: 600;

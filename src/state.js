@@ -7,7 +7,8 @@ function chunkSubstr(str, size) {
     const numChunks = Math.ceil(str.length / size);
     const chunks = new Array(numChunks);
 
-    for (let i = 0, o = 0; i < numChunks; ++i, o += size) {
+    for (let i = 0, o = 0; i < numChunks; ++i,
+    o += size) {
         chunks[i] = str.substr(o, size);
     }
 
@@ -26,9 +27,6 @@ export class State {
 
     element() {
         const item = document.createElement('span');
-        item.ondrag = e=>{
-            console.log(e.layerX, e.layerY)
-        };
         item.setAttribute('draggable', 'true');
         item.textContent = this.handle?.name || 'untitled';
         this.domElement = item;
@@ -154,6 +152,14 @@ export class StateManager extends HTMLElement {
                 item.classList.add('active');
             if (!t.saved)
                 item.classList.add('unsaved');
+            item.ondrag = e=>{
+                item.style.display = e.layerY > config.headerHeight ? 'none' : '';
+            }
+            item.ondragend = e=>{
+                if (e.layerY > config.headerHeight) {
+                    this.close(i)
+                }
+            }
             item.onclick = e=>{
                 e.preventDefault();
                 this.active = i;
