@@ -14,12 +14,12 @@ export class Ted extends HTMLElement {
 
         this.actions = defineActions(this);
 
-        this.setTheme();
+//         this.setTheme();
 
         this.computeCharacterSize();
         this.computeViewport();
 
-        this.state = new StateManager(()=>this.refreshPositions(),this.nbChars);
+        this.state = new StateManager(()=>this.refreshPositions());
 
         this.position = 0;
         this.hPosition = 0;
@@ -41,10 +41,11 @@ export class Ted extends HTMLElement {
 
         window.addEventListener('resize', e=>this.resize());
 
-        //         window.addEventListener('blur', e=>{
-        //             this.state.cursels = [];
-        //             this.render();
-        //         });
+        window.addEventListener('blur', e=>{
+            this.state.cursels = [];
+            this.render();
+        }
+        );
 
         window.matchMedia("(prefers-color-scheme: dark)").addListener(e=>this.setTheme(e.matches ? 'dark' : 'light'));
     }
@@ -61,17 +62,20 @@ export class Ted extends HTMLElement {
 
             let[x,y] = this.mouseCoordinates(e);
             this.selection.update(...this.mousePosition(x, y));
-
+            
             /* kink function */
             const kink = (val,span)=>(val < 0 || val > span) * (val - span * (val >= span));
 
             x = kink(x, this.viewport.width - config.leftMargin - 20);
             y = kink(y, this.viewport.height);
-
-            this.scroll({
-                deltaY: y * config.overSelectScrollSpeed,
-                deltaX: x * config.overSelectScrollSpeed
-            });
+            
+            if (x || y) 
+                this.scroll({
+                    deltaY: y * config.overSelectScrollSpeed,
+                    deltaX: x * config.overSelectScrollSpeed
+                });
+            else
+                this.renderCursels();
         }
     }
 
@@ -124,21 +128,7 @@ export class Ted extends HTMLElement {
     }
 
     input(text) {
-        this.state.cursels.forEach((c)=>{
-            const [sl,sc,el,ec] = c.orderedPositions();
-            const head = this.state.lines[sl].slice(0, sc);
-            const tail = this.state.lines[el].slice(ec);
-            const newLines = (head + text + tail).split('\n');
-            this.state.splice(sl, el - sl + 1, ...newLines);
-            const last = newLines[newLines.length - 1].length - tail.length;
-            c.toCursor(sl + newLines.length - 1, last);
-            for (const k of this.state.cursels) {
-                if (k === c)
-                    break;
-                k.adjust(el, ec, sl - el + newLines.length - 1, last - ec);
-            }
-        }
-        );
+        this.state.input(text);
         this.render();
         this.fuseCursels();
     }

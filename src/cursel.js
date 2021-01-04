@@ -130,6 +130,21 @@ export class Cursel {
         }
     }
 
+    toArray() {
+        return [this.l, this.c, this.tl, this.tc];
+    }
+
+    static fromArray([l, c, tl, tc]) {
+        const res = new Cursel(l, c);
+        if (l == tl && tl == tc) {
+            return res.toCursor();
+        } else {
+            res.tl = tl;
+            res.tc = tc;
+            return res;
+        }
+    }
+
     fuse(other) {
         let[sl,sc,el,ec] = this.orderedPositions();
         const [osl,osc,oel,oec] = other.orderedPositions();

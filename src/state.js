@@ -1,5 +1,6 @@
 import {Cursel} from './cursel.js';
 import {config} from './config.js';
+import {History} from './history.js';
 
 const indentRegex = /(^[ \t]*)\S?/;
 
@@ -23,6 +24,7 @@ export class State {
         this.cursels = [new Cursel(0,0)];
         this.position = 0;
         this.hPosition = 0;
+        this.history = new History();
     }
 
     element() {
@@ -79,9 +81,8 @@ export class State {
 }
 
 export class StateManager extends HTMLElement {
-    constructor(tedRender, nbChars) {
+    constructor(tedRender) {
         super();
-        this.nbChars = nbChars;
         this.tedRender = tedRender;
         this.barPosition = 0;
         this.lines = [''];
@@ -197,11 +198,9 @@ export class StateManager extends HTMLElement {
     }
 
     saveState() {
-        //         if (this._act !== undefined) {
         this.instances[this._act].position = this.position;
         this.instances[this._act].hPosition = this.hPosition;
         this.instances[this._act].cursels = this.cursels;
-        //         }
     }
 
     updateBinding(i) {
@@ -253,9 +252,44 @@ export class StateManager extends HTMLElement {
         };
     }
 
-    splice(i, del, ...args) {
-        this.lines.splice(i, del, ...args);
-        this.instances[this.active].changed();
+    input(text) {
+        const curselsToSave = this.cursels.map(c=>c.toArray());
+        const linesToSave = []
+        this.cursels.forEach((c)=>{
+            const [sl,sc,el,ec] = c.orderedPositions();
+            const backup = {
+                lines: this.lines.slice(sl, el + 1),
+                i: sl
+            };
+            const head = this.lines[sl].slice(0, sc);
+            const tail = this.lines[el].slice(ec);
+            const newLines = (head + text + tail).split('\n');
+            backup.del = newLines.length;
+            this.lines.splice(sl, el - sl + 1, ...newLines);
+            const last = newLines[newLines.length - 1].length - tail.length;
+            c.toCursor(sl + newLines.length - 1, last);
+            for (const k of this.cursels) {
+                if (k === c)
+                    break;
+                k.adjust(el, ec, sl - el + newLines.length - 1, last - ec);
+            }
+            linesToSave.push(backup);
+        }
+        );
+        this.current.changed();
+        this.current.history.store(curselsToSave, linesToSave);
+    }
+
+    unredo(way) {
+        let hist;
+        if (hist = this.current.history.undo(way)) {
+            console.log(hist);
+            this.cursels = hist.cursels.map(a=>Cursel.fromArray(a));
+            hist.splices.forEach((s)=>{
+                this.lines.splice(s.i, s.del, ...s.lines);
+            });
+            this.tedRender();
+        }
     }
 
     async addFile(handle) {

@@ -6,8 +6,10 @@ export const config = {
     lightTheme: 'breakers',
     overSelectScrollSpeed: 0.5,
     headerHeight: 30,
+    highlight: false,
     /* functionality */
     breakLines: true,
     tabSize: 4,
     repeatIndentation: true,
+    historySize: 20
 }

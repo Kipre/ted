@@ -1,10 +1,7 @@
 /* Based on Sublime Text's Monokai theme */
-
 @media (prefers-color-scheme: dark) {
-     /* html {
-    background: #282828;
-    color: #fff
-} */span.comment {
+    
+    span.comment {
         color: #75715e;
     }
 
@@ -16,21 +13,6 @@
         color: #ae81ff;
     }
 
-    /* span.cm-comment.cm-attribute {
-    color: #97b757;
-}
-
-span.cm-comment.cm-def {
-    color: #bc9262;
-}
-
-span.cm-comment.cm-tag {
-    color: #bc6283;
-}
-
-span.cm-comment.cm-type {
-    color: #5998a6;
-} */
     span.property {
         color: #a6e22e;
     }
@@ -41,7 +23,6 @@ span.cm-comment.cm-type {
 
     span.function-builtin {
         color: #ede6ab;
-        /* font-family: monospace; */
         font-style: italic;
     }
 
@@ -76,26 +57,4 @@ span.cm-comment.cm-type {
     span.string-special {
         color: #60d79c;
     }
-
-    /* span.cm-bracket {
-    color: #f8f8f2;
-}
-
-span.cm-tag {
-    color: #f92672;
-}
-
-span.variable-parameter {
-    color: #a894cc;
-}
-
-span.cm-link {
-    color: #ae81ff;
-}
-
-span.cm-error {
-    background: #f92672;
-    color: #f8f8f0;
-}
- */
 }

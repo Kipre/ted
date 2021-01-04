@@ -46,6 +46,12 @@ export const defineActions = (ted)=>{
             );
             ted.render();
 
+        },
+        undo: e=>{
+            ted.state.unredo(-1);
+        },
+        redo: e=>{
+            ted.state.unredo(1);
         }
         ,
         letter: e=>{

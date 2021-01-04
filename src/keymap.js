@@ -5,8 +5,8 @@ export function keyToAction(e) {
         switch(e.key) {
         case('P'):
             return 'togglecommandline';
-        case('N'):
-            return 'newfile';
+        case('Z'):
+            return 'redo';
         }
     } else if (e.ctrlKey) {
         switch(e.key) {
@@ -22,6 +22,8 @@ export function keyToAction(e) {
             return 'open';
         case('s'):
             return 'save';
+        case('z'):
+            return 'undo';
         }
     } else if (e.shiftKey) {
         if (e.key.length == 1)
