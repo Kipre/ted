@@ -12,9 +12,8 @@
         <ted-editor id='ted'></ted-editor>
     </body>
     <script src="src/main.js" type="module"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.8.2/dist/tf.min.js"></script>
+    <script src="models/tfjs.js"></script>
 <!--     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js"></script> -->
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@2.8.2/dist/tf-converter.min.js"></script>
 <script>
 let model;
 tf.loadGraphModel('./models/hi-en-js/model.json').then(m=>{model = m});

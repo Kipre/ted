@@ -46,10 +46,12 @@ export const defineActions = (ted)=>{
             );
             ted.render();
 
-        },
+        }
+        ,
         undo: e=>{
             ted.state.unredo(-1);
-        },
+        }
+        ,
         redo: e=>{
             ted.state.unredo(1);
         }
@@ -58,12 +60,26 @@ export const defineActions = (ted)=>{
             ted.input(e.key);
         }
         ,
+        bracket: e=>{
+            ted.bracket(e.key);
+        }
+        ,
+        delete: e=>{
+            ted.state.cursels.filter(c=>c.isCursor()).forEach(c=>{
+                c.moveSelection('right', ted.state.lineContext(c.l));
+                c.invert();
+            }
+            );
+            ted.input('');
+        }
+        ,
         copy: ()=>{
             navigator.clipboard.writeText(ted.textFromCursel(0));
         }
         ,
         paste: ()=>{
             navigator.clipboard.readText().then(clipText=>{
+                // weird backspace at the end of pasted lines
                 clipText = clipText.replace(/\s\n/g, '\n');
                 ted.input(clipText);
             }
@@ -103,11 +119,13 @@ export const defineActions = (ted)=>{
         ,
         openfolder: e=>{
             ted.state.openFolder();
-        },
+        }
+        ,
         cut: e=>{
             navigator.clipboard.writeText(ted.textFromCursel(0));
             ted.input('');
-        },
+        }
+        ,
         nothing: ()=>{}
     }
 }

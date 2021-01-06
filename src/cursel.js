@@ -118,6 +118,16 @@ export class Cursel {
             this.l += deltaLine;
     }
 
+    invert() {
+        if (!this.isCursor()) {
+            const [l, c] = [this.l, this.c];
+            this.l = this.tl;
+            this.c = this.tc;
+            this.tl = l;
+            this.tc = c;
+        }
+    }
+
     inside(line, char) {
         const [sl,sc,el,ec] = this.orderedPositions();
         return (sl < line && line < el) || (line == sl && line != el && sc < char) || (line == el && line != sl && char < ec) || (line == el && line == sl && sc < char && char < ec);

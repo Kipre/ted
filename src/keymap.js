@@ -45,6 +45,8 @@ export function keyToAction(e) {
         switch(e.key) {
         case('Backspace'):
             return 'backspace';
+        case('Delete'):
+            return 'delete';
         case('Tab'):
             return 'tab';
         case('Enter'):

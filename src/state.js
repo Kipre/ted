@@ -274,16 +274,18 @@ export class StateManager extends HTMLElement {
                 k.adjust(el, ec, sl - el + newLines.length - 1, last - ec);
             }
             linesToSave.push(backup);
-        }
-        );
+        });
         this.current.changed();
         this.current.history.store(curselsToSave, linesToSave);
+    }
+    
+    brackets(backet) {
+        
     }
 
     unredo(way) {
         let hist;
         if (hist = this.current.history.undo(way)) {
-            console.log(hist);
             this.cursels = hist.cursels.map(a=>Cursel.fromArray(a));
             hist.splices.forEach((s)=>{
                 this.lines.splice(s.i, s.del, ...s.lines);
