@@ -24,6 +24,8 @@ export function keyToAction(e) {
             return 'save';
         case('z'):
             return 'undo';
+        case(':'):
+            return 'comment';
         }
     } else if (e.shiftKey) {
         if (e.key.length == 1)

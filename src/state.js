@@ -8,8 +8,7 @@ function chunkSubstr(str, size) {
     const numChunks = Math.ceil(str.length / size);
     const chunks = new Array(numChunks);
 
-    for (let i = 0, o = 0; i < numChunks; ++i,
-    o += size) {
+    for (let i = 0, o = 0; i < numChunks; ++i, o += size) {
         chunks[i] = str.substr(o, size);
     }
 
@@ -62,6 +61,7 @@ export class State {
         const file = await handle.getFile();
         const text = await file.text();
         self.lines = text.split('\n');
+        self.categories = this.lines.map(l=>new Uint8Array(l.length))
         self.saved = true;
         self.cursels = [];
         return self;
@@ -279,8 +279,18 @@ export class StateManager extends HTMLElement {
         this.current.history.store(curselsToSave, linesToSave);
     }
     
-    brackets(backet) {
-        
+    aroundCursel(before, after) {
+        this.cursels.forEach((c)=>{
+            const [sl,sc,el,ec] = c.orderedPositions();
+            this.lines[el] = this.lines[el].slice(0, ec) + after + this.lines[el].slice(ec);
+            this.lines[sl] = this.lines[sl].slice(0, sc) + before + this.lines[sl].slice(sc);
+            c.adjust(sl, sc, 0, before.length);
+            for (const k of this.cursels) {
+                if (k === c)
+                    break;
+                k.adjust(el, ec, 0, (sl == el)*before.length + after.length);
+            }
+        });
     }
 
     unredo(way) {

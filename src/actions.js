@@ -2,6 +2,17 @@ import {Cursel} from './cursel.js';
 import {Options} from './options.js';
 import {config} from './config.js';
 
+const left = {
+    ['{']: '}',
+    ['(']: ')',
+    ['[']: ']',
+    ['"']: '"',
+    ["'"]: "'",
+    ['`']: '`',
+}
+
+const brackets = Object.keys(left);
+
 export const defineActions = (ted)=>{
     return {
         backspace: e=>{
@@ -35,6 +46,7 @@ export const defineActions = (ted)=>{
                 c.moveSelection(e.key.slice(5).toLowerCase(), ted.state.lineContext(c.l));
             }
             );
+            ted
             ted.render();
         }
         ,
@@ -57,11 +69,11 @@ export const defineActions = (ted)=>{
         }
         ,
         letter: e=>{
-            ted.input(e.key);
-        }
-        ,
-        bracket: e=>{
-            ted.bracket(e.key);
+            if (brackets.includes(e.key)) {
+                ted.state.aroundCursel(e.key, left[e.key]);
+                ted.render();
+            } else
+                ted.input(e.key);
         }
         ,
         delete: e=>{

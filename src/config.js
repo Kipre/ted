@@ -2,8 +2,7 @@ export const config = {
     /* ui */
     leftMargin: 50,
     scrollDistance: 80,
-    darkTheme: 'monokai',
-    lightTheme: 'breakers',
+    theme: 'breakers',
     overSelectScrollSpeed: 0.5,
     headerHeight: 30,
     highlight: false,

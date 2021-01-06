@@ -74,10 +74,9 @@ export class Cursel {
             }
             break;
         case 'right':
-            const lastChar = here;
-            if (this.c == lastChar && this.l != lastLine)
+            if (this.c == here && this.l != lastLine)
                 this.update(this.l + 1, 0)
-            else if (this.l != lastChar)
+            else if (this.c != here)
                 this.update(this.l, this.c + 1);
             break;
         case "left":
@@ -120,11 +119,7 @@ export class Cursel {
 
     invert() {
         if (!this.isCursor()) {
-            const [l, c] = [this.l, this.c];
-            this.l = this.tl;
-            this.c = this.tc;
-            this.tl = l;
-            this.tc = c;
+            [this.l, this.c, this.tl, this.tc] = [this.tl, this.tc, this.l, this.c];
         }
     }
 
