@@ -116,6 +116,13 @@ export class Cursel {
         if (this.l >= line)
             this.l += deltaLine;
     }
+    
+    adjustSelection(line, char, deltaChar) {
+        if (this.c >= char) {
+            this.c += deltaChar * (line == this.l);
+            this.tc += deltaChar * (line == this.tl);
+        }
+    }
 
     invert() {
         if (!this.isCursor()) {

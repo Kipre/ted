@@ -284,11 +284,11 @@ export class StateManager extends HTMLElement {
             const [sl,sc,el,ec] = c.orderedPositions();
             this.lines[el] = this.lines[el].slice(0, ec) + after + this.lines[el].slice(ec);
             this.lines[sl] = this.lines[sl].slice(0, sc) + before + this.lines[sl].slice(sc);
-            c.adjust(sl, sc, 0, before.length);
+            c.adjustSelection(sl, 0, before.length);
             for (const k of this.cursels) {
                 if (k === c)
                     break;
-                k.adjust(el, ec, 0, (sl == el)*before.length + after.length);
+                k.adjustSelection(el, ec, before.length + after.length);
             }
         });
     }
