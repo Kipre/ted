@@ -61,7 +61,7 @@ export class State {
         const file = await handle.getFile();
         const text = await file.text();
         self.lines = text.split('\n');
-        self.categories = this.lines.map(l=>new Uint8Array(l.length))
+        self.categories = this.lines.map(l=>new Uint8Array(l.length));
         self.saved = true;
         self.cursels = [];
         return self;
