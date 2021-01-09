@@ -88,7 +88,6 @@ export class Cursel {
         default:
             console.log(`unknown way ${way}`);
         }
-        //         console.log(this.l, this.c, this.tl, this.tc, this.hc);
     }
 
     moveSelection(way, context) {

@@ -14,7 +14,7 @@ export class Ted extends HTMLElement {
 
         this.actions = defineActions(this);
 
-//         this.setTheme();
+        //         this.setTheme();
 
         this.computeCharacterSize();
         this.computeViewport();
@@ -62,14 +62,14 @@ export class Ted extends HTMLElement {
 
             let[x,y] = this.mouseCoordinates(e);
             this.selection.update(...this.mousePosition(x, y));
-            
+
             /* kink function */
             const kink = (val,span)=>(val < 0 || val > span) * (val - span * (val >= span));
 
             x = kink(x, this.viewport.width - config.leftMargin - 20);
             y = kink(y, this.viewport.height);
-            
-            if (x || y) 
+
+            if (x || y)
                 this.scroll({
                     deltaY: y * config.overSelectScrollSpeed,
                     deltaX: x * config.overSelectScrollSpeed
@@ -161,27 +161,22 @@ export class Ted extends HTMLElement {
     }
 
     render() {
-        //         console.time('render')
+        //                 console.time('render')
         this.refocus();
-
         this.relativeDiv.style.top = `-${this.currentDelta}px`;
-
         this.populateLines(config.breakLines);
-
         this.vScrollbar.update(this.position, this.limit);
-
         this.renderCursels();
-
         this.updateLongestLine();
-        //         console.timeEnd('render')
+        //                 console.timeEnd('render')
     }
 
     populateLines(breakLines) {
         this.style.counterSet = `line ${this.currentLine}`;
         for (let i = 0; i < this.nbLines; i++) {
-            const content = this.state.lines[i + this.currentLine]?.slice(this.currentChar, this.currentChar + this.nbChars) ?? String.fromCodePoint(0)
-            this.lines[i].content = content;
+            this.lines[i].set(...this.state.pair(i + this.currentLine, this.currentChar, this.currentChar + this.nbChars));
         }
+
     }
 
     get limit() {

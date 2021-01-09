@@ -2,13 +2,20 @@ import {Cursel} from './cursel.js';
 import {config} from './config.js';
 import {History} from './history.js';
 
+const perimeter = 40;
+const oper = 10;
+const space = ' '.charCodeAt(0) - 9;
+const chunk = 2 * oper + 1;
+const inChunk = 2 * permimeter + 1;
+
 const indentRegex = /(^[ \t]*)\S?/;
 
 function chunkSubstr(str, size) {
     const numChunks = Math.ceil(str.length / size);
     const chunks = new Array(numChunks);
 
-    for (let i = 0, o = 0; i < numChunks; ++i, o += size) {
+    for (let i = 0, o = 0; i < numChunks; ++i,
+    o += size) {
         chunks[i] = str.substr(o, size);
     }
 
@@ -61,9 +68,9 @@ export class State {
         const file = await handle.getFile();
         const text = await file.text();
         self.lines = text.split('\n');
-        self.categories = this.lines.map(l=>new Uint8Array(l.length));
         self.saved = true;
         self.cursels = [];
+        self.computeAllCategories(text);
         return self;
     }
 
@@ -72,10 +79,35 @@ export class State {
         newState.lines = o.text.split('\n');
         newState.handle = o.handle;
         newState.saved = o.saved;
+        newState.categories = o.categories;
         newState.cursels = [];
         newState.position = o.pos;
         newState.hPosition = o.hpos;
         return newState;
+    }
+
+    async computeAllCategories(text) {
+        if (model) {
+            let letters = Array.from(text).map(c=>c.charCodeAt(0) - 9);
+            const nbChunks = Math.ceil(letters.length / chunk) || 1;
+            letters = letters.concat(Array(nbChunks * chunk - letters.length).fill(space));
+            letters = Array(perimeter - oper).fill(space).concat(letters).concat(Array(perimeter - oper).fill(space));
+            console.log(letters, nbChunks);
+            const batch = []
+            for (let i = 0; i < nbChunks; i++) {
+                console.log(i * chunk, (i + 1) * chunk);
+                batch.push(letters.slice(i * chunk, i * chunk + inChunk));
+            }
+            const classes = tf.argMax(model.predict(tf.tensor(batch, [nbChunks, inChunk], 'int32')), -1).dataSync();
+            let currentPos = 0;
+            this.categories = [];
+            this.lines.forEach((l,i)=>{
+                this.categories.push(new Uint8Array(classes.slice(currentPos, currentPos + l.length)));
+                currentPos += l.length + 1;
+            }
+            );
+            console.log(batch, classes, this.lines, this.categories)
+        }
     }
 
 }
@@ -122,6 +154,10 @@ export class StateManager extends HTMLElement {
             }
         }
 
+    }
+
+    pair(i, start, end) {
+        return [this.lines[i]?.slice(start, end) ?? String.fromCodePoint(0), this.instances?.[this._act]?.categories?.[i]?.slice(start, end)];
     }
 
     storeStates() {
@@ -190,7 +226,7 @@ export class StateManager extends HTMLElement {
     }
 
     get current() {
-        return this.instances[this._act];
+        return this.instances?.[this._act];
     }
 
     get active() {
@@ -274,11 +310,12 @@ export class StateManager extends HTMLElement {
                 k.adjust(el, ec, sl - el + newLines.length - 1, last - ec);
             }
             linesToSave.push(backup);
-        });
+        }
+        );
         this.current.changed();
         this.current.history.store(curselsToSave, linesToSave);
     }
-    
+
     aroundCursel(before, after) {
         this.cursels.forEach((c)=>{
             const [sl,sc,el,ec] = c.orderedPositions();
@@ -290,7 +327,8 @@ export class StateManager extends HTMLElement {
                     break;
                 k.adjustSelection(el, ec, before.length + after.length);
             }
-        });
+        }
+        );
     }
 
     unredo(way) {
@@ -299,7 +337,8 @@ export class StateManager extends HTMLElement {
             this.cursels = hist.cursels.map(a=>Cursel.fromArray(a));
             hist.splices.forEach((s)=>{
                 this.lines.splice(s.i, s.del, ...s.lines);
-            });
+            }
+            );
             this.tedRender();
         }
     }

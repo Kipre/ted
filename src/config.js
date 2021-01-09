@@ -5,10 +5,11 @@ export const config = {
     theme: 'breakers',
     overSelectScrollSpeed: 0.5,
     headerHeight: 30,
-    highlight: false,
     /* functionality */
     breakLines: true,
     tabSize: 4,
     repeatIndentation: true,
-    historySize: 20
+    historySize: 20,
+    highlight: true,
+    highlightMaxChars: 10000,
 }
