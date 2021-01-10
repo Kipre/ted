@@ -14,8 +14,6 @@ export class Ted extends HTMLElement {
 
         this.actions = defineActions(this);
 
-        //         this.setTheme();
-
         this.computeCharacterSize();
         this.computeViewport();
 
@@ -28,26 +26,7 @@ export class Ted extends HTMLElement {
         this.assignSizes();
         this.render();
 
-        window.addEventListener('keydown', e=>this.keyDown(e));
-
-        window.addEventListener('mousemove', e=>this.mouseMove(e));
-
-        window.addEventListener('mouseup', e=>{
-            this.selection?.tighten();
-            this.selection = null;
-            this.fuseCursels();
-        }
-        );
-
-        window.addEventListener('resize', e=>this.resize());
-
-        window.addEventListener('blur', e=>{
-            this.state.cursels = [];
-            this.render();
-        }
-        );
-
-        window.matchMedia("(prefers-color-scheme: dark)").addListener(e=>this.setTheme(e.matches ? 'dark' : 'light'));
+        this.assignListeners();
     }
 
     refreshPositions() {
@@ -329,6 +308,29 @@ export class Ted extends HTMLElement {
 
     get currentDelta() {
         return this._delta;
+    }
+
+    assignListeners() {
+        window.addEventListener('keydown', e=>this.keyDown(e));
+
+        window.addEventListener('mousemove', e=>this.mouseMove(e));
+
+        window.addEventListener('mouseup', e=>{
+            this.selection?.tighten();
+            this.selection = null;
+            this.fuseCursels();
+        }
+        );
+
+        window.addEventListener('resize', e=>this.resize());
+
+        window.addEventListener('blur', e=>{
+            this.state.cursels = [];
+            this.render();
+        }
+        );
+
+//         window.matchMedia("(prefers-color-scheme: dark)").addListener(e=>this.setTheme(e.matches ? 'dark' : 'light'));
     }
 }
 

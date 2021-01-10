@@ -2,25 +2,7 @@ import {Cursel} from './cursel.js';
 import {config} from './config.js';
 import {History} from './history.js';
 
-const perimeter = 40;
-const oper = 10;
-const space = ' '.charCodeAt(0) - 9;
-const chunk = 2 * oper + 1;
-const inChunk = 2 * permimeter + 1;
-
 const indentRegex = /(^[ \t]*)\S?/;
-
-function chunkSubstr(str, size) {
-    const numChunks = Math.ceil(str.length / size);
-    const chunks = new Array(numChunks);
-
-    for (let i = 0, o = 0; i < numChunks; ++i,
-    o += size) {
-        chunks[i] = str.substr(o, size);
-    }
-
-    return chunks;
-}
 
 export class State {
 
@@ -70,46 +52,20 @@ export class State {
         self.lines = text.split('\n');
         self.saved = true;
         self.cursels = [];
-        self.computeAllCategories(text);
         return self;
     }
 
     static fromObject(o) {
-        const newState = new State();
-        newState.lines = o.text.split('\n');
-        newState.handle = o.handle;
-        newState.saved = o.saved;
-        newState.categories = o.categories;
-        newState.cursels = [];
-        newState.position = o.pos;
-        newState.hPosition = o.hpos;
-        return newState;
+        const self = new State();
+        self.lines = o.text.split('\n');
+        self.handle = o.handle;
+        self.saved = o.saved;
+        self.categories = o.categories;
+        self.cursels = [];
+        self.position = o.pos;
+        self.hPosition = o.hpos;
+        return self;
     }
-
-    async computeAllCategories(text) {
-        if (model) {
-            let letters = Array.from(text).map(c=>c.charCodeAt(0) - 9);
-            const nbChunks = Math.ceil(letters.length / chunk) || 1;
-            letters = letters.concat(Array(nbChunks * chunk - letters.length).fill(space));
-            letters = Array(perimeter - oper).fill(space).concat(letters).concat(Array(perimeter - oper).fill(space));
-            console.log(letters, nbChunks);
-            const batch = []
-            for (let i = 0; i < nbChunks; i++) {
-                console.log(i * chunk, (i + 1) * chunk);
-                batch.push(letters.slice(i * chunk, i * chunk + inChunk));
-            }
-            const classes = tf.argMax(model.predict(tf.tensor(batch, [nbChunks, inChunk], 'int32')), -1).dataSync();
-            let currentPos = 0;
-            this.categories = [];
-            this.lines.forEach((l,i)=>{
-                this.categories.push(new Uint8Array(classes.slice(currentPos, currentPos + l.length)));
-                currentPos += l.length + 1;
-            }
-            );
-            console.log(batch, classes, this.lines, this.categories)
-        }
-    }
-
 }
 
 export class StateManager extends HTMLElement {
@@ -119,12 +75,33 @@ export class StateManager extends HTMLElement {
         this.barPosition = 0;
         this.lines = [''];
         this.cursels = [];
+
         this.addEventListener('wheel', e=>this.scroll(e), {
             passive: true
         });
 
-        const self = this;
+        this.highlightWorker = new Worker('src/highlight_worker.js');
+        this.highlightWorker.onmessage = e=>{
+            const message = e.data;
+            if (message.type == "everything") {
+                console.log(message.categories);
+                this.current.categories = message.categories;
+                this.tedRender();
+            } else if (message.type == 'model ready') {
+                this.highlightWorker.postMessage({
+                    type: 'everything',
+                    text: this.lines.join('\n')
+                });
+            } else {
+                console.log('unknown message', message);
+            }
+        }
 
+        this.synchronizeWithDB();
+    }
+
+    synchronizeWithDB() {
+        const self = this;
         const request = indexedDB.open('ted');
 
         request.onupgradeneeded = e=>{
@@ -153,7 +130,6 @@ export class StateManager extends HTMLElement {
                 return true;
             }
         }
-
     }
 
     pair(i, start, end) {
@@ -209,8 +185,7 @@ export class StateManager extends HTMLElement {
                 }
             }
             this.appendChild(item);
-        }
-        );
+        });
     }
 
     close(i) {
@@ -240,10 +215,15 @@ export class StateManager extends HTMLElement {
     }
 
     updateBinding(i) {
+        this.categories = null;
         this.lines = this.instances[i].lines;
         this.cursels = this.instances[i].cursels;
         this.position = this.instances[i].position;
         this.hPosition = this.instances[i].hPosition;
+        this.highlightWorker.postMessage({
+            type: 'everything',
+            text: this.lines.join('\n')
+        });
         this.render();
         this.tedRender?.();
     }

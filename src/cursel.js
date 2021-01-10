@@ -9,9 +9,11 @@ export class Cursel {
         // cursor position
         this.l = line;
         this.c = char;
+        
         // tail position
         this.tl = line;
         this.tc = char;
+        
         // historic char position
         this.hc = char;
     }
