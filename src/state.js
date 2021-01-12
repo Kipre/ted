@@ -4,12 +4,16 @@ import {History} from './history.js';
 
 const indentRegex = /(^[ \t]*)\S?/;
 
+const worker = new Worker('src/highlight_worker.js');
+
+
 export class State {
 
     constructor(text='') {
+        this.text = text;
         this.lines = text.split('\n');
         this.saved = false;
-        this.cursels = [new Cursel(0,0)];
+        this.cursels = [];
         this.position = 0;
         this.hPosition = 0;
         this.history = new History();
@@ -48,8 +52,8 @@ export class State {
         const self = new State();
         self.handle = handle;
         const file = await handle.getFile();
-        const text = await file.text();
-        self.lines = text.split('\n');
+        self.text = await file.text();
+        self.lines = self.text.split('\n');
         self.saved = true;
         self.cursels = [];
         return self;
@@ -57,6 +61,7 @@ export class State {
 
     static fromObject(o) {
         const self = new State();
+        self.text = o.text;
         self.lines = o.text.split('\n');
         self.handle = o.handle;
         self.saved = o.saved;
@@ -78,24 +83,18 @@ export class StateManager extends HTMLElement {
 
         this.addEventListener('wheel', e=>this.scroll(e), {
             passive: true
-        });
+        });        
 
-        this.highlightWorker = new Worker('src/highlight_worker.js');
-        this.highlightWorker.onmessage = e=>{
+        worker.addEventListener('message', e=>{
             const message = e.data;
             if (message.type == "everything") {
-                console.log(message.categories);
-                this.current.categories = message.categories;
+                this.lines = message.html;
                 this.tedRender();
-            } else if (message.type == 'model ready') {
-                this.highlightWorker.postMessage({
-                    type: 'everything',
-                    text: this.lines.join('\n')
-                });
+                console.log(message.html)
             } else {
                 console.log('unknown message', message);
             }
-        }
+        });
 
         this.synchronizeWithDB();
     }
@@ -133,7 +132,11 @@ export class StateManager extends HTMLElement {
     }
 
     pair(i, start, end) {
-        return [this.lines[i]?.slice(start, end) ?? String.fromCodePoint(0), this.instances?.[this._act]?.categories?.[i]?.slice(start, end)];
+        return [, this.instances?.[this._act]?.categories?.[i]?.slice(start, end)];
+    }
+
+    getRichText(i, start, end) {
+        return this.lines[i]?.slice(start, end) ?? String.fromCodePoint(0);
     }
 
     storeStates() {
@@ -185,7 +188,8 @@ export class StateManager extends HTMLElement {
                 }
             }
             this.appendChild(item);
-        });
+        }
+        );
     }
 
     close(i) {
@@ -220,7 +224,7 @@ export class StateManager extends HTMLElement {
         this.cursels = this.instances[i].cursels;
         this.position = this.instances[i].position;
         this.hPosition = this.instances[i].hPosition;
-        this.highlightWorker.postMessage({
+        worker.postMessage({
             type: 'everything',
             text: this.lines.join('\n')
         });

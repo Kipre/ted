@@ -140,20 +140,20 @@ export class Ted extends HTMLElement {
     }
 
     render() {
-        //                 console.time('render')
+//         console.time('render');
         this.refocus();
         this.relativeDiv.style.top = `-${this.currentDelta}px`;
-        this.populateLines(config.breakLines);
+        this.populateLines();
         this.vScrollbar.update(this.position, this.limit);
         this.renderCursels();
         this.updateLongestLine();
-        //                 console.timeEnd('render')
+//         console.timeEnd('render');
     }
 
-    populateLines(breakLines) {
+    populateLines() {
         this.style.counterSet = `line ${this.currentLine}`;
         for (let i = 0; i < this.nbLines; i++) {
-            this.lines[i].set(...this.state.pair(i + this.currentLine, this.currentChar, this.currentChar + this.nbChars));
+            this.lines[i].set(this.state.getRichText(i + this.currentLine, this.currentChar, this.currentChar + this.nbChars));
         }
 
     }

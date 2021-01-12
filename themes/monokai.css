@@ -1,6 +1,63 @@
 /* Based on Sublime Text's Monokai theme */
+
+span.comment {
+    color: #a8a8a8;
+}
+
+span.operator {
+    color: #7054a2;
+}
+
+span.number {
+    color: #503a76;
+}
+
+span.property {
+    color: #678d1d;
+}
+
+span.function {
+    color: #7d7219;
+}
+
+span.function-builtin {
+    color: #918200;
+    font-style: italic;
+}
+
+span.function-method {
+    color: #166990;
+}
+
+span.keyword {
+    color: #cc1f5e;
+}
+
+span.variable-builtin {
+    color: #0092ae;
+}
+
+span.string {
+    color: #0dd650;
+}
+
+span.variable {
+    color: #000000;
+}
+
+span.constant-builtin {
+    color: #bd0031;
+}
+
+span.punctuation-special {
+    color: #a0a0a0;
+}
+
+span.string-special {
+    color: #60d79c;
+}
+
 @media (prefers-color-scheme: dark) {
-    
     span.comment {
         color: #75715e;
     }

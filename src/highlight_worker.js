@@ -5,34 +5,35 @@ const oper = 10;
 const chunk = 2 * oper + 1;
 const inputChunk = 2 * perimeter + 1;
 
+const categories = ['nothing', "property", "variable-builtin", "variable", "string", "function-method", "variable-parameter", "operator", "keyword", "function", 'number', 'comment', 'constant-builtin', "string-special", "embedded", "punctuation-special", "constructor", "constant", "function-builtin", "escape", "keyword-argument", "type"];
+
 let model;
 
 importScripts('../models/tfjs.js');
 
-tf.loadGraphModel('../models/hi-en-js/model.json').then(m=>{
+const modelPromise = tf.loadGraphModel('../models/hi-en-js/model.json').then(m=>{
     model = m;
 
     // warmup
     model.predict(tf.tensor([new Uint8Array(inputChunk)]));
-    postMessage({type: 'model ready'});
+    //     postMessage({type: 'model ready'});
 }
 );
 
-onmessage = e=>{
+onmessage = async e=>{
     const message = e.data;
-    if (model) {
-        if (message.type == "everything") {
-            postMessage({
-                type: 'everything',
-                categories: wholeText(message.text)
-            });
-        } else if (message.type == 'lineonly') {
-            postMessage([new Uint8Array(4)])
-        }
-    } else {
+    await modelPromise;
+    this.handleMessage(e.data);
+}
+
+function handleMessage(message) {
+    if (message.type == "everything") {
         postMessage({
-            type: 'model not ready'
+            type: 'everything',
+            html: wholeText(message.text)
         });
+    } else if (message.type == 'lineonly') {
+        postMessage([new Uint8Array(4)])
     }
 }
 
@@ -52,10 +53,24 @@ function wholeText(text) {
 
     let currentPos = 0;
     let result = [];
-    lines.forEach((l,i)=>{
-        result.push(new Uint8Array(classes.slice(currentPos, currentPos + l.length)));
+    lines.forEach(l=>{
+
+        let html = '';
+        let currentCategory = 0;
+        for (let i = currentPos; i < currentPos + l.length; i++) {
+            if (classes[i] == currentCategory) {
+                html += text[i];
+            } else {
+                html += `</span><span class='${categories[classes[i]]}'>${text[i]}`;
+                currentCategory = classes[i];
+            }
+        }
+        result.push(html);
         currentPos += l.length + 1;
     }
     );
     return result;
 }
+
+// if (cats) {
+//         } else 
