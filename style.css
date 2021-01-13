@@ -1,11 +1,12 @@
 @font-face {
     font-family: 'JetBrains Mono';
-    src: 'fonts/JetBrainsMono-VariableFont_wght.ttf' format('tff');
+    src: 'fonts/JetBrainsMono-VariableFont_wght.ttf' format('tff supports variations');
+    font-weight: 100 700;
 }
 
 @font-face {
     font-family: 'JetBrains Mono Italic';
-    src: 'fonts/JetBrainsMono-Italic-VariableFont_wght.ttf' format('tff');
+    src: 'fonts/JetBrainsMono-Italic-VariableFont_wght.ttf' format('tff supports variations');
 }
 
 html {
@@ -23,7 +24,6 @@ ted-editor {
     font-family: 'JetBrains Mono', monospace;
     font-weight: 100;
     counter-reset: line;
-    user-select: none;
 }
 
 ted-editor > .relative {
@@ -77,8 +77,10 @@ body {
 }
 
 ted-line {
-    pointer-events: none;
+    /* pointer-events: none; */
+    user-select: none;
     white-space: pre;
+    font-weight: 100;
     width: 100%;
     padding-left: 1px;
     float: left;

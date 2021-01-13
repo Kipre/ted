@@ -6,11 +6,26 @@ const indentRegex = /(^[ \t]*)\S?/;
 
 const worker = new Worker('src/highlight_worker.js');
 
+const extensions = {
+    javascript: ['.js'],
+    python: ['.py']
+}
+
+function languageFromName(name) {
+    if (!name) return;
+    for (const [lang, exts] of Object.entries(extensions)) {
+        for (const ext of exts) {
+            if (name.endsWith(ext))
+                return lang;
+        }
+    }
+    return;
+}
+
 
 export class State {
 
     constructor(text='') {
-        this.text = text;
         this.lines = text.split('\n');
         this.saved = false;
         this.cursels = [];
@@ -44,7 +59,8 @@ export class State {
             handle: this.handle,
             saved: this.saved,
             pos: this.position,
-            hpos: this.hPosition
+            hpos: this.hPosition,
+            language: this.language
         };
     }
 
@@ -52,8 +68,9 @@ export class State {
         const self = new State();
         self.handle = handle;
         const file = await handle.getFile();
-        self.text = await file.text();
-        self.lines = self.text.split('\n');
+        const text = await file.text();
+        self.lines = text.split('\n');
+        self.language = languageFromName(handle.name);
         self.saved = true;
         self.cursels = [];
         return self;
@@ -61,7 +78,6 @@ export class State {
 
     static fromObject(o) {
         const self = new State();
-        self.text = o.text;
         self.lines = o.text.split('\n');
         self.handle = o.handle;
         self.saved = o.saved;
@@ -69,6 +85,7 @@ export class State {
         self.cursels = [];
         self.position = o.pos;
         self.hPosition = o.hpos;
+        self.language = o.language;
         return self;
     }
 }
@@ -88,9 +105,8 @@ export class StateManager extends HTMLElement {
         worker.addEventListener('message', e=>{
             const message = e.data;
             if (message.type == "everything") {
-                this.lines = message.html;
+                this.current.categories = message.categories;
                 this.tedRender();
-                console.log(message.html)
             } else {
                 console.log('unknown message', message);
             }
@@ -132,7 +148,7 @@ export class StateManager extends HTMLElement {
     }
 
     pair(i, start, end) {
-        return [, this.instances?.[this._act]?.categories?.[i]?.slice(start, end)];
+        return [this.lines[i]?.slice(start, end) ?? String.fromCodePoint(0), this.instances?.[this._act]?.categories?.[i]?.slice(start, end)];
     }
 
     getRichText(i, start, end) {
@@ -224,10 +240,13 @@ export class StateManager extends HTMLElement {
         this.cursels = this.instances[i].cursels;
         this.position = this.instances[i].position;
         this.hPosition = this.instances[i].hPosition;
-        worker.postMessage({
-            type: 'everything',
-            text: this.lines.join('\n')
-        });
+        const lang = languageFromName(this.instances[i].handle?.name);
+        if (lang)
+            worker.postMessage({
+                type: 'everything',
+                language: lang,
+                text: this.lines.join('\n')
+            });
         this.render();
         this.tedRender?.();
     }

@@ -7,37 +7,42 @@ const inputChunk = 2 * perimeter + 1;
 
 const categories = ['nothing', "property", "variable-builtin", "variable", "string", "function-method", "variable-parameter", "operator", "keyword", "function", 'number', 'comment', 'constant-builtin', "string-special", "embedded", "punctuation-special", "constructor", "constant", "function-builtin", "escape", "keyword-argument", "type"];
 
-let model;
+const languages = ['javascript'];
+
+let models = {};
 
 importScripts('../models/tfjs.js');
 
-const modelPromise = tf.loadGraphModel('../models/hi-en-js/model.json').then(m=>{
-    model = m;
-
-    // warmup
-    model.predict(tf.tensor([new Uint8Array(inputChunk)]));
-    //     postMessage({type: 'model ready'});
+async function loadModels() {
+    for (const lang of languages) {
+        models[lang] = await tf.loadGraphModel(`../models/${lang}/model.json`);
+    }
 }
-);
+
+const loadingPromise = loadModels();
 
 onmessage = async e=>{
-    const message = e.data;
-    await modelPromise;
-    this.handleMessage(e.data);
+    await loadingPromise;
+    if (languages.includes(e.data.language))
+        this.handleMessage(e.data);
 }
 
 function handleMessage(message) {
     if (message.type == "everything") {
         postMessage({
             type: 'everything',
-            html: wholeText(message.text)
+            categories: wholeText(message.text, message.language)
         });
-    } else if (message.type == 'lineonly') {
+    } else if (message.type == 'line') {
         postMessage([new Uint8Array(4)])
     }
 }
 
-function wholeText(text) {
+function highlightLine(line) {
+    return;
+}
+
+function wholeText(text, language) {
 
     const lines = text.split('\n');
     let letters = Array.from(text).map(c=>c.charCodeAt(0) - 9);
@@ -49,28 +54,25 @@ function wholeText(text) {
         batch.push(letters.slice(i * chunk, i * chunk + inputChunk));
     }
 
-    const classes = tf.argMax(model.predict(tf.tensor(batch, [nbChunks, inputChunk], 'int32')), -1).dataSync();
+    const classes = tf.argMax(models[language].predict(tf.tensor(batch, [nbChunks, inputChunk], 'int32')), -1).dataSync();
 
     let currentPos = 0;
     let result = [];
     lines.forEach(l=>{
-
-        let html = '';
-        let currentCategory = 0;
-        for (let i = currentPos; i < currentPos + l.length; i++) {
-            if (classes[i] == currentCategory) {
-                html += text[i];
-            } else {
-                html += `</span><span class='${categories[classes[i]]}'>${text[i]}`;
-                currentCategory = classes[i];
-            }
-        }
-        result.push(html);
+        result.push(new Uint8Array(classes.slice(currentPos, currentPos + l.length)));
         currentPos += l.length + 1;
     }
     );
     return result;
 }
 
-// if (cats) {
-//         } else 
+//         let html = '';
+//         let currentCategory = 0;
+//         for (let i = currentPos; i < currentPos + l.length; i++) {
+//             if (classes[i] == currentCategory) {
+//                 html += text[i];
+//             } else {
+//                 html += `</span><span class='${categories[classes[i]]}'>${text[i]}`;
+//                 currentCategory = classes[i];
+//             }
+//         }

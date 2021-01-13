@@ -153,7 +153,7 @@ export class Ted extends HTMLElement {
     populateLines() {
         this.style.counterSet = `line ${this.currentLine}`;
         for (let i = 0; i < this.nbLines; i++) {
-            this.lines[i].set(this.state.getRichText(i + this.currentLine, this.currentChar, this.currentChar + this.nbChars));
+            this.lines[i].set(...this.state.pair(i + this.currentLine, this.currentChar, this.currentChar + this.nbChars));
         }
 
     }
