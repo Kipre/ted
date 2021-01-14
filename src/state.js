@@ -4,7 +4,7 @@ import {History} from './history.js';
 
 const indentRegex = /(^[ \t]*)\S?/;
 
-const worker = new Worker('src/highlight_worker.js');
+const worker = config.highlight ? new Worker('src/highlight_worker.js'): null;
 
 const extensions = {
     javascript: ['.js'],
@@ -12,8 +12,9 @@ const extensions = {
 }
 
 function languageFromName(name) {
-    if (!name) return;
-    for (const [lang, exts] of Object.entries(extensions)) {
+    if (!name)
+        return;
+    for (const [lang,exts] of Object.entries(extensions)) {
         for (const ext of exts) {
             if (name.endsWith(ext))
                 return lang;
@@ -21,7 +22,6 @@ function languageFromName(name) {
     }
     return;
 }
-
 
 export class State {
 
@@ -100,9 +100,9 @@ export class StateManager extends HTMLElement {
 
         this.addEventListener('wheel', e=>this.scroll(e), {
             passive: true
-        });        
+        });
 
-        worker.addEventListener('message', e=>{
+        worker?.addEventListener('message', e=>{
             const message = e.data;
             if (message.type == "everything") {
                 this.current.categories = message.categories;
@@ -110,7 +110,8 @@ export class StateManager extends HTMLElement {
             } else {
                 console.log('unknown message', message);
             }
-        });
+        }
+        );
 
         this.synchronizeWithDB();
     }
@@ -173,6 +174,13 @@ export class StateManager extends HTMLElement {
             deltaX: 0,
             deltaY: 0
         });
+    }
+
+    nextChar() {
+        if (this.cursels.length != 1 || !this.cursels[0].isCursor())
+            return;
+        const {l, c} = this.cursels[0];
+        return this.lines[l][c];
     }
 
     render() {
@@ -241,7 +249,7 @@ export class StateManager extends HTMLElement {
         this.position = this.instances[i].position;
         this.hPosition = this.instances[i].hPosition;
         const lang = languageFromName(this.instances[i].handle?.name);
-        if (lang)
+        if (lang && config.highlight)
             worker.postMessage({
                 type: 'everything',
                 language: lang,
@@ -280,6 +288,10 @@ export class StateManager extends HTMLElement {
             return [this.nbLines - 1, this.length(this.nbLines - 1)]
         }
         return [line, Math.max(0, Math.min(char, this.lines[line].length))];
+    }
+
+    moveCursels(way) {
+        this.cursels.forEach(c=>c.moveCursor(way, this.lineContext(c.l)))
     }
 
     lineContext(line) {
@@ -344,6 +356,22 @@ export class StateManager extends HTMLElement {
             );
             this.tedRender();
         }
+    }
+    
+    textFromCursel(curselIndex) {
+        let text = "";
+        const cursel = this.cursels[curselIndex]
+        const [sl,sc,el,ec] = cursel.orderedPositions();
+        if (cursel.isCursor()) {
+            text = "\n" + this.lines[cursel.l];
+        } else {
+            for (let i = sl; i <= el; ++i) {
+                const startChar = i == sl ? sc : 0
+                const endChar = i == el ? ec : this.lines[i].length + 1;
+                text += (this.lines[i] + '\n').slice(startChar, endChar);
+            }
+        }
+        return text;
     }
 
     async addFile(handle) {

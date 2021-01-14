@@ -12,6 +12,7 @@ const left = {
 }
 
 const brackets = Object.keys(left);
+const leftBrackets = Object.values(left);
 
 export const defineActions = (ted)=>{
     return {
@@ -72,6 +73,9 @@ export const defineActions = (ted)=>{
             if (brackets.includes(e.key)) {
                 ted.state.aroundCursel(e.key, left[e.key]);
                 ted.render();
+            } else if (leftBrackets.includes(e.key) && ted.state.nextChar() === e.key) {
+                ted.state.moveCursels('right');
+                ted.render();
             } else
                 ted.input(e.key);
         }
@@ -86,7 +90,7 @@ export const defineActions = (ted)=>{
         }
         ,
         copy: ()=>{
-            navigator.clipboard.writeText(ted.textFromCursel(0));
+            navigator.clipboard.writeText(ted.state.textFromCursel(0));
         }
         ,
         paste: ()=>{

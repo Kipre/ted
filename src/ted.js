@@ -235,22 +235,6 @@ export class Ted extends HTMLElement {
         this.actions[keyToAction(e)](e);
     }
 
-    textFromCursel(curselIndex) {
-        let text = "";
-        const cursel = this.state.cursels[curselIndex]
-        const [sl,sc,el,ec] = cursel.orderedPositions();
-        if (cursel.isCursor()) {
-            text = "\n" + this.text.lines[cursel.l];
-        } else {
-            for (let i = sl; i <= el; ++i) {
-                const startChar = i == sl ? sc : 0
-                const endChar = i == el ? ec : this.state.lines[i].length + 1;
-                text += (this.state.lines[i] + '\n').slice(startChar, endChar);
-            }
-        }
-        return text;
-    }
-
     async updateLongestLine() {
         this.maxHorizontalPosition = Math.max(0, (await this.state.longestLine() - this.nbChars + 2) * this.charWidth);
         this.hScrollbar.update(this.hPosition, this.maxHorizontalPosition);
@@ -324,11 +308,11 @@ export class Ted extends HTMLElement {
 
         window.addEventListener('resize', e=>this.resize());
 
-        window.addEventListener('blur', e=>{
-            this.state.cursels = [];
-            this.render();
-        }
-        );
+//         window.addEventListener('blur', e=>{
+//             this.state.cursels = [];
+//             this.render();
+//         }
+//         );
 
 //         window.matchMedia("(prefers-color-scheme: dark)").addListener(e=>this.setTheme(e.matches ? 'dark' : 'light'));
     }

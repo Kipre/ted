@@ -198,7 +198,7 @@ export function drawCursel(ted, cursel) {
             subSelection.style.width = `${(end - start) * ted.charWidth}px`;
             subSelection.style.height = `${ted.charHeight}px`;
             subSelection.style.top = `${(i - ted.currentLine) * ted.charHeight}px`;
-            subSelection.style.left = `${2 + start * ted.charWidth}px`;
+            subSelection.style.left = `${1 + start * ted.charWidth}px`;
             ted.relativeDiv.appendChild(subSelection);
         }
     }
