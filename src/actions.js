@@ -138,7 +138,7 @@ export const defineActions = (ted)=>{
         }
         ,
         cut: e=>{
-            navigator.clipboard.writeText(ted.textFromCursel(0));
+            navigator.clipboard.writeText(ted.state.textFromCursel(0));
             ted.input('');
         }
         ,

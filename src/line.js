@@ -2,7 +2,6 @@ import {config} from './config.js';
 
 const categories = ['nothing', "property", "variable-builtin", "variable", "string", "function-method", "variable-parameter", "operator", "keyword", "function", 'number', 'comment', 'constant-builtin', "string-special", "embedded", "punctuation-special", "constructor", "constant", "function-builtin", "escape", "keyword-argument", "type"];
 
-
 export class Line extends HTMLElement {
 
     constructor(content) {
@@ -31,21 +30,30 @@ export class Line extends HTMLElement {
         }
     }
 
+    appendChildSpan(text, cat) {
+        const domSpan = document.createElement('span');
+        domSpan.textContent = text;
+        domSpan.classList.add(categories[cat]);
+        this.appendChild(domSpan);
+    }
+
     set(val, cats) {
         this.innerHTML = '';
         if (val !== String.fromCodePoint(0)) {
             if (cats) {
-                let curCategory = 0, span = '';
+                let curCategory = 0
+                  , span = '';
                 for (let i = 0; i <= val.length; i++) {
-                    if (curCategory == cats[i]) {
+                    if (curCategory === cats[i]) {
                         span += val[i];
                     } else {
-                        const domSpan = document.createElement('span');
-                        domSpan.textContent = span;
-                        domSpan.classList.add(categories[curCategory]);
-                        this.appendChild(domSpan);
+                        this.appendChildSpan(span, curCategory);
                         span = val[i];
                         curCategory = cats[i];
+                    }
+                    if (cats[i] === undefined) {
+                        this.appendChildSpan(val.slice(i, val.length), 0);
+                        break;
                     }
                 }
             } else {

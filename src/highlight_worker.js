@@ -1,6 +1,6 @@
 const space = ' '.charCodeAt(0) - 9;
 
-const window_size = 100;
+const window_size = 256;
 
 const categories = ['nothing', "property", "variable-builtin", "variable", "string", "function-method", "variable-parameter", "operator", "keyword", "function", 'number', 'comment', 'constant-builtin', "string-special", "embedded", "punctuation-special", "constructor", "constant", "function-builtin", "escape", "keyword-argument", "type"];
 
@@ -13,14 +13,14 @@ importScripts('../models/tfjs.js');
 async function loadModels() {
     for (const lang of languages) {
         models[lang] = await tf.loadGraphModel(`../models/${lang}/model.json`);
-        console.log(models[lang].predict(tf.zeros([1, 100], 'int32')));
+//         console.log(models[lang].predict(tf.zeros([1, window_size], 'int32')));
     }
 }
 
-const loadingPromise = loadModels();
+const busy = loadModels();
 
 onmessage = async e=>{
-    await loadingPromise;
+    await busy;
     if (languages.includes(e.data.language))
         this.handleMessage(e.data);
 }
@@ -32,7 +32,11 @@ function handleMessage(message) {
             categories: wholeText(message.text, message.language)
         });
     } else if (message.type == 'line') {
-        postMessage([new Uint8Array(4)])
+        postMessage({
+            type: 'line',
+            line: message.line,
+            categories: wholeText(message.text, message.language)
+        })
     }
 }
 

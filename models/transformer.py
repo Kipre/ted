@@ -1,84 +1,53 @@
-class SelfAttention(tf.keras.layers.Layer):
-
-    def __init__(self, batch_size, window_size, vector_size, heads=8):
-        super(SelfAttention, self).__init__()
-        self.b = batch_size
-        self.w = window_size
-        self.v = vector_size
-        self.h = heads
-        self.query = tf.keras.layers.Dense(self.v*self.h, use_bias=False)
-        self.value = tf.keras.layers.Dense(self.v*self.h, use_bias=False)
-        self.key = tf.keras.layers.Dense(self.v*self.h, use_bias=False)
-        self.reduce = tf.keras.layers.Dense(self.v, use_bias=False)
-
-    def __call__(self, x):
-        q = tf.reshape(self.query(x), [self.b, self.w, self.h, self.v])
-        v = tf.reshape(self.value(x), [self.b, self.w, self.h, self.v])
-        k = tf.reshape(self.key(x), [self.b, self.w, self.h, self.v])
-        w = (tf.transpose(q, perm=[0, 2, 1, 3]) @ tf.transpose(k, perm=[0, 2, 3, 1])) / tf.sqrt(np.array(self.v, dtype=np.float32))
-        w = tf.nn.softmax(w, axis=-1)
-        res = w @ tf.transpose(v, perm=[0, 2, 1, 3])
-        return self.reduce(tf.reshape(tf.transpose(res, perm=[0, 2, 1, 3]), [self.b, self.w, self.v*self.h]))
-
+import tensorflow as tf
 
 class TransformerBlock(tf.keras.layers.Layer):
-
-    def __init__(self, batch_size, window_size, vector_size, heads=8):
+    def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
         super(TransformerBlock, self).__init__()
-        self.b = batch_size
-        self.w = window_size
-        self.v = vector_size
-        self.h = heads
+        self.att = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)
+        self.ffn = tf.keras.Sequential(
+            [tf.keras.layers.Dense(ff_dim, activation="relu"), tf.keras.layers.Dense(embed_dim),]
+        )
+        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.dropout1 = tf.keras.layers.Dropout(rate)
+        self.dropout2 = tf.keras.layers.Dropout(rate)
 
-        self.attention = SelfAttention(batch_size, window_size, vector_size, heads)
-
-        self.n1 = tf.keras.layers.LayerNormalization()
-        self.n2 = tf.keras.layers.LayerNormalization()
-
-        self.ff = tf.keras.Sequential([tf.keras.layers.Dense(4*self.v, 'relu'),
-                                       tf.keras.layers.Dense(self.v)])
-        
-    def __call__(self, x):
-        att = self.attention(x)
-        x = self.n1(att + x)
-        ff = self.ff(x)
-        return self.n2(ff + x)
-
-        
-
-class Transformer(tf.keras.Model):
-    
-    def __init__(self, batch_size, nb_tokens, window_size, vector_size, heads, depth, num_classes):
-        super(Transformer, self).__init__()
-        self.w = window_size
-
-        self.token_emb = tf.keras.layers.Embedding(nb_tokens, vector_size, input_length=window_size)
-        self.pos_emb = tf.keras.layers.Embedding(window_size, vector_size, input_length=window_size)
-
-        blocks = [TransformerBlock(batch_size, window_size, vector_size, heads) for d in range(depth)]
-
-        self.blocks = tf.keras.Sequential(blocks)
-
-        self.final = tf.keras.layers.Dense(num_classes, 'softmax')
-
-    def __call__(self, x):
-        tokens = self.token_emb(x)
-        pos = self.pos_emb(tf.range(self.w))[tf.newaxis, :, :]
-        x = tokens + pos
-        x = self.blocks(x)
-        x = tf.reduce_mean(x, axis=-2)
-        return self.final(x)
+    def call(self, inputs, training):
+        attn_output = self.att(inputs, inputs)
+        attn_output = self.dropout1(attn_output, training=training)
+        out1 = self.layernorm1(inputs + attn_output)
+        ffn_output = self.ffn(out1)
+        ffn_output = self.dropout2(ffn_output, training=training)
+        return self.layernorm2(out1 + ffn_output)
 
 
-initializer = tf.random_normal_initializer()
-embedding_size = 5
-window_size = 11
-batch_size = 8
-nb_tokens = 13
-heads = 7
-depth = 9
-num_classes = 2
+class TokenAndPositionEmbedding(tf.keras.layers.Layer):
+    def __init__(self, maxlen, vocab_size, embed_dim):
+        super(TokenAndPositionEmbedding, self).__init__()
+        self.token_emb = tf.keras.layers.Embedding(input_dim=vocab_size, output_dim=embed_dim)
+        self.pos_emb = tf.keras.layers.Embedding(input_dim=maxlen, output_dim=embed_dim)
+
+    def call(self, x):
+        maxlen = tf.shape(x)[-1]
+        positions = tf.range(start=0, limit=maxlen, delta=1)
+        positions = self.pos_emb(positions)
+        x = self.token_emb(x)
+        return x + positions
 
 
-model = Transformer(batch_size, nb_tokens, window_size, embedding_size, heads, depth, num_classes)
-model(np.random.randint(0, nb_tokens, size=(batch_size, window_size)))
+
+embed_dim = 8
+num_heads = 2
+ff_dim = 32
+nb_tokens = 255
+window_size = 100
+nb_categories = 22
+
+model = tf.keras.Sequential([
+    TokenAndPositionEmbedding(window_size, nb_tokens, embed_dim),
+    TransformerBlock(embed_dim, num_heads, ff_dim),
+    TransformerBlock(embed_dim, num_heads, ff_dim),
+    tf.keras.layers.Dense(ff_dim, 'relu'),
+    tf.keras.layers.Dense(nb_categories, 'softmax')
+])
+

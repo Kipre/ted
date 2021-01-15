@@ -4,7 +4,7 @@ import {History} from './history.js';
 
 const indentRegex = /(^[ \t]*)\S?/;
 
-const worker = config.highlight ? new Worker('src/highlight_worker.js'): null;
+const worker = config.highlight ? new Worker('src/highlight_worker.js') : null;
 
 const extensions = {
     javascript: ['.js'],
@@ -106,6 +106,12 @@ export class StateManager extends HTMLElement {
             const message = e.data;
             if (message.type == "everything") {
                 this.current.categories = message.categories;
+                this.tedRender();
+            } else if (message.type == "line") {
+                message.categories.forEach((l,i)=>{
+                    this.current.categories[i + message.line] = l;
+                }
+                );
                 this.tedRender();
             } else {
                 console.log('unknown message', message);
@@ -248,11 +254,11 @@ export class StateManager extends HTMLElement {
         this.cursels = this.instances[i].cursels;
         this.position = this.instances[i].position;
         this.hPosition = this.instances[i].hPosition;
-        const lang = languageFromName(this.instances[i].handle?.name);
-        if (lang && config.highlight)
+        this.current.language = languageFromName(this.instances[i].handle?.name);
+        if (this.current.language && config.highlight)
             worker.postMessage({
                 type: 'everything',
-                language: lang,
+                language: this.current.language,
                 text: this.lines.join('\n')
             });
         this.render();
@@ -314,15 +320,26 @@ export class StateManager extends HTMLElement {
             };
             const head = this.lines[sl].slice(0, sc);
             const tail = this.lines[el].slice(ec);
-            const newLines = (head + text + tail).split('\n');
+            const newText = head + text + tail;
+            const newLines = newText.split('\n');
+            const lastLine = newLines.length - 1;
+            const lastChar = newLines[lastLine].length - tail.length;
+            if (this.current.categories) {
+                const newCats = newLines.map(l=>new Uint8Array(l.length));
+                newCats[0].set(this.current.categories[sl].slice(0, sc))
+                try {
+                    newCats[lastLine].set(this.current.categories[el].slice(ec), lastChar - 1);
+                } catch (e) {}
+                this.highlightLines(sl, newText);
+                this.current.categories.splice(sl, el - sl + 1, ...newCats);
+            }
             backup.del = newLines.length;
             this.lines.splice(sl, el - sl + 1, ...newLines);
-            const last = newLines[newLines.length - 1].length - tail.length;
-            c.toCursor(sl + newLines.length - 1, last);
+            c.toCursor(sl + newLines.length - 1, lastChar);
             for (const k of this.cursels) {
                 if (k === c)
                     break;
-                k.adjust(el, ec, sl - el + newLines.length - 1, last - ec);
+                k.adjust(el, ec, sl - el + newLines.length - 1, lastChar - ec);
             }
             linesToSave.push(backup);
         }
@@ -331,11 +348,33 @@ export class StateManager extends HTMLElement {
         this.current.history.store(curselsToSave, linesToSave);
     }
 
+    highlightLines(lineNumber, text) {
+        if (this.current.language)
+            worker?.postMessage({
+                type: 'line',
+                line: lineNumber,
+                text: text,
+                language: this.current.language
+            })
+    }
+
     aroundCursel(before, after) {
         this.cursels.forEach((c)=>{
             const [sl,sc,el,ec] = c.orderedPositions();
             this.lines[el] = this.lines[el].slice(0, ec) + after + this.lines[el].slice(ec);
             this.lines[sl] = this.lines[sl].slice(0, sc) + before + this.lines[sl].slice(sc);
+            if (this.current.categories) {
+                const startCat = new Uint8Array(this.lines[sl].length);
+                startCat.set(this.current.categories[sl].slice(0, sc));
+                startCat.set(this.current.categories[sl].slice(sc), sc + before);
+                const endCat = new Uint8Array(this.lines[el].length);
+                startCat.set(this.current.categories[el].slice(0, ec));
+                startCat.set(this.current.categories[el].slice(ec), ec + after);
+                try {
+                    newCats[lastLine].set(this.current.categories[el].slice(ec), lastChar - 1);
+                } catch (e) {}
+                this.highlightLines(sl, this.lines.slice(sl, el + 1).join('\n'));
+            }
             c.adjustSelection(sl, 0, before.length);
             for (const k of this.cursels) {
                 if (k === c)
@@ -357,7 +396,7 @@ export class StateManager extends HTMLElement {
             this.tedRender();
         }
     }
-    
+
     textFromCursel(curselIndex) {
         let text = "";
         const cursel = this.cursels[curselIndex]
