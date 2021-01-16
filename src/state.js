@@ -182,11 +182,14 @@ export class StateManager extends HTMLElement {
         });
     }
 
-    nextChar() {
+    cursorContext() {
         if (this.cursels.length != 1 || !this.cursels[0].isCursor())
             return;
         const {l, c} = this.cursels[0];
-        return this.lines[l][c];
+        return {
+            before: this.lines[l][c - 1] ?? '',
+            after: this.lines[l][c] ?? ''
+        };
     }
 
     render() {
@@ -329,7 +332,7 @@ export class StateManager extends HTMLElement {
                 newCats[0].set(this.current.categories[sl].slice(0, sc))
                 try {
                     newCats[lastLine].set(this.current.categories[el].slice(ec), lastChar - 1);
-                } catch (e) {}
+                } finally {}
                 this.highlightLines(sl, newText);
                 this.current.categories.splice(sl, el - sl + 1, ...newCats);
             }

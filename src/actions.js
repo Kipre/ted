@@ -73,7 +73,7 @@ export const defineActions = (ted)=>{
             if (brackets.includes(e.key)) {
                 ted.state.aroundCursel(e.key, left[e.key]);
                 ted.render();
-            } else if (leftBrackets.includes(e.key) && ted.state.nextChar() === e.key) {
+            } else if (leftBrackets.includes(e.key) && ted.state.cursorContext().after === e.key) {
                 ted.state.moveCursels('right');
                 ted.render();
             } else
@@ -119,7 +119,12 @@ export const defineActions = (ted)=>{
         }
         ,
         newline: ()=>{
-            const newLine = '\n' + ' '.repeat(config.repeatIndentation * ted.state.indentation(ted.state.cursels[0].l));
+            const indent = ' '.repeat(config.repeatIndentation * ted.state.indentation(ted.state.cursels[0].l));
+            let newLine = '\n' + indent;
+            const {before, after} = ted.state.cursorContext();
+            if (before == '{' && after == '}') {
+                newLine += ' '.repeat(config.tabSize) + '\n' + indent;
+            }
             ted.input(newLine);
         }
         ,

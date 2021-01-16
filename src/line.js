@@ -43,7 +43,7 @@ export class Line extends HTMLElement {
             if (cats) {
                 let curCategory = 0
                   , span = '';
-                for (let i = 0; i <= val.length; i++) {
+                for (let i = 0; i < val.length; i++) {
                     if (curCategory === cats[i]) {
                         span += val[i];
                     } else {
@@ -51,11 +51,8 @@ export class Line extends HTMLElement {
                         span = val[i];
                         curCategory = cats[i];
                     }
-                    if (cats[i] === undefined) {
-                        this.appendChildSpan(val.slice(i, val.length), 0);
-                        break;
-                    }
                 }
+                this.appendChildSpan(span, curCategory);
             } else {
                 this.textContent = val;
             }

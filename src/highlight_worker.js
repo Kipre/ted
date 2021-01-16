@@ -1,6 +1,6 @@
 const space = ' '.charCodeAt(0) - 9;
 
-const window_size = 256;
+const windowSize = 256;
 
 const categories = ['nothing', "property", "variable-builtin", "variable", "string", "function-method", "variable-parameter", "operator", "keyword", "function", 'number', 'comment', 'constant-builtin', "string-special", "embedded", "punctuation-special", "constructor", "constant", "function-builtin", "escape", "keyword-argument", "type"];
 
@@ -13,16 +13,42 @@ importScripts('../models/tfjs.js');
 async function loadModels() {
     for (const lang of languages) {
         models[lang] = await tf.loadGraphModel(`../models/${lang}/model.json`);
-//         console.log(models[lang].predict(tf.zeros([1, window_size], 'int32')));
+        //         console.log(models[lang].predict(tf.zeros([1, window_size], 'int32')));
     }
 }
 
-const busy = loadModels();
+class MessageQueue {
 
-onmessage = async e=>{
-    await busy;
-    if (languages.includes(e.data.language))
-        this.handleMessage(e.data);
+    constructor(loadPromise) {
+        this.queue = [];
+        this.busy = loadPromise;
+    }
+
+    async run() {
+        await this.busy;
+        while (this.queue.length > 0)
+            handleMessage(this.queue.shift());
+    }
+
+    push(message) {
+        const last = this.queue[this.queue.length - 1];
+        console.log(last);
+        if (last && last.type == message.type && last.line == message.line) {
+            this.queue[this.queue.length - 1] = message;
+        } else {
+            this.queue.push(message);
+        }
+        setTimeout(()=>{
+            this.run()
+        }
+        , 100);
+    }
+}
+
+const queue = new MessageQueue(loadModels());
+
+onmessage = e=>{
+    queue.push(e.data);
 }
 
 function handleMessage(message) {
@@ -40,22 +66,17 @@ function handleMessage(message) {
     }
 }
 
-function highlightLine(line) {
-    return;
-}
-
 function wholeText(text, language) {
-
     const lines = text.split('\n');
     let letters = Array.from(text).map(c=>c.charCodeAt(0) - 9);
-    const nbChunks = Math.ceil(letters.length / window_size) || 1;
-    letters = letters.concat(Array(nbChunks * window_size - letters.length).fill(space));
+    const nbChunks = Math.ceil(letters.length / windowSize) || 1;
+    letters = letters.concat(Array(nbChunks * windowSize - letters.length).fill(space));
     const batch = [];
     for (let i = 0; i < nbChunks; i++) {
-        batch.push(letters.slice(i * window_size, (i + 1) * window_size));
+        batch.push(letters.slice(i * windowSize, (i + 1) * windowSize));
     }
-    
-    const classes = tf.argMax(models[language].predict(tf.tensor(batch, [nbChunks, window_size], 'int32')), -1).dataSync();
+
+    const classes = tf.argMax(models[language].predict(tf.tensor(batch, [nbChunks, windowSize], 'int32')), -1).dataSync();
 
     let currentPos = 0;
     let result = [];
