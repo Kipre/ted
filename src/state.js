@@ -312,7 +312,52 @@ export class StateManager extends HTMLElement {
         };
     }
 
-    input(text) {
+    input(left, mid='', right='') {
+        /* prepare variables for historic caching */
+        //         const curselsToSave = this.cursels.map(c=>c.toArray());
+        //         const linesToSave = [];
+
+        /* main cursel loop */
+        for (const cursel of this.cursels) {
+            this.curselInput(cursel, left, mid, right);
+        }
+    }
+
+    curselInput(cursel, left, mid='', right='') {
+        let [sl,sc,el,ec] = cursel.orderedPositions();
+        let midLines = [];
+        if (mid === null) {
+            midLines.push(...this.lines.slice(sl, el + 1));
+            midLines[0] = midLines[0].slice(sc)
+            midLines[midLines.length - 1] = midLines[midLines.length - 1].slice(0, ec - (el == sl)*sc)
+        } else {
+            midLines = [''];
+        }
+        const head = this.lines[sl].slice(0, sc) + left;
+        const tail = right + this.lines[el].slice(ec);
+        const newLines = head.split('\n');
+        const tailLines = tail.split('\n');
+        const newCurselPositions = [];
+
+        /* append mid lines */
+        newCurselPositions.push(sl + newLines.length - 1, newLines[newLines.length - 1].length);
+        newLines[newLines.length - 1] += midLines[0];
+        newLines.push(...midLines.slice(1));
+
+        /* append tail */
+        newCurselPositions.push(sl + newLines.length - 1, newLines[newLines.length - 1].length);
+        newLines[newLines.length - 1] += tailLines[0];
+        newLines.push(...tailLines.slice(1));
+
+        this.lines.splice(sl, el - sl + 1, ...newLines);
+        for (let j = 0; j < this.cursels.length; j++) {
+            this.cursels[j].adjust(el, ec, sl - el + newLines.length - 1, newCurselPositions[3] + right.length - ec);
+        }
+        cursel.relocate(...newCurselPositions);
+    }
+
+    input2(text) {
+        console.time('input')
         const curselsToSave = this.cursels.map(c=>c.toArray());
         const linesToSave = []
         this.cursels.forEach((c)=>{
@@ -332,7 +377,7 @@ export class StateManager extends HTMLElement {
                 newCats[0].set(this.current.categories[sl].slice(0, sc))
                 try {
                     newCats[lastLine].set(this.current.categories[el].slice(ec), lastChar - 1);
-                } finally {}
+                } catch (e) {}
                 this.highlightLines(sl, newText);
                 this.current.categories.splice(sl, el - sl + 1, ...newCats);
             }
@@ -349,6 +394,7 @@ export class StateManager extends HTMLElement {
         );
         this.current.changed();
         this.current.history.store(curselsToSave, linesToSave);
+        console.timeEnd('input')
     }
 
     highlightLines(lineNumber, text) {

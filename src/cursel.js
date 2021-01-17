@@ -45,6 +45,14 @@ export class Cursel {
         this.hc = c;
     }
 
+    relocate(sl, sc, el, ec) {
+        if (this.l <= this.tl && this.c <= this.tc) {
+            [this.l, this.c, this.tl, this.tc] = [sl, sc, el, ec];
+        } else {
+            [this.l, this.c, this.tl, this.tc] = [el, ec, sl, sc]
+        }
+    }
+
     orderedPositions() {
         const [tl,tc] = this.isCursor() ? [this.l, this.c] : [this.tl, this.tc];
         if (this.l > tl || (this.l == tl && this.c > tc)) {
@@ -111,17 +119,29 @@ export class Cursel {
             this.move(way, context);
     }
 
-    adjust(line, char, deltaLine, deltaChar) {
-        if (this.l == line && this.c >= char)
-            this.c += deltaChar;
-        if (this.l >= line)
-            this.l += deltaLine;
-    }
+//     adjust(line, char, deltaLine, deltaChar) {
+//         if (this.l == line && this.c >= char)
+//             this.c += deltaChar;
+//         if (this.l >= line)
+//             this.l += deltaLine;
+//     }
+
+//     adjust(line, char, deltaLine, deltaChar) {
+//         if (this.l == line && this.c >= char)
+//             this.c += deltaChar;
+//         if (this.l >= line)
+//             this.l += deltaLine;
+//     }
     
-    adjustSelection(line, char, deltaChar) {
+    adjust(line, char, deltaLine, deltaChar) {
         if (this.c >= char) {
             this.c += deltaChar * (line == this.l);
             this.tc += deltaChar * (line == this.tl);
+        }
+
+        if (Math.min(this.l, this.tl) > line) {
+            this.l += deltaLine;
+            this.tl += deltaLine;
         }
     }
 

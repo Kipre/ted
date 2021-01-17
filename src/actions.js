@@ -18,8 +18,27 @@ export const defineActions = (ted)=>{
     return {
         backspace: e=>{
             e.preventDefault();
-            ted.state.cursels.filter(c=>c.isCursor()).forEach(c=>c.moveSelection('left', ted.state.lineContext(c.l)));
-            ted.input('');
+            for (const cursel of ted.state.cursels) {
+                if (cursel.isCursor()) {
+                    cursel.toSelection();
+                    cursel.move('left', ted.state.lineContext());
+                }
+                ted.state.curselInput(cursel, '', '', '');
+            }
+            ted.render();
+            ted.fuseCursels();
+        }
+        ,
+        transpose: e=>{
+//             for (const cursel of ted.state.cursels) {
+//                 if (cursel.isCursor()) {
+//                     cursel.toSelection();
+//                     cursel.move('left', ted.state.lineContext());
+//                 }
+//                 ted.state.curselInput(cursel, '', '', '');
+//             }
+//             ted.render();
+//             ted.fuseCursels();
         }
         ,
         selectall: ()=>{
@@ -47,7 +66,6 @@ export const defineActions = (ted)=>{
                 c.moveSelection(e.key.slice(5).toLowerCase(), ted.state.lineContext(c.l));
             }
             );
-            ted
             ted.render();
         }
         ,
@@ -71,7 +89,7 @@ export const defineActions = (ted)=>{
         ,
         letter: e=>{
             if (brackets.includes(e.key)) {
-                ted.state.aroundCursel(e.key, left[e.key]);
+                ted.state.input(e.key, null, left[e.key]);
                 ted.render();
             } else if (leftBrackets.includes(e.key) && ted.state.cursorContext().after === e.key) {
                 ted.state.moveCursels('right');
@@ -81,12 +99,16 @@ export const defineActions = (ted)=>{
         }
         ,
         delete: e=>{
-            ted.state.cursels.filter(c=>c.isCursor()).forEach(c=>{
-                c.moveSelection('right', ted.state.lineContext(c.l));
-                c.invert();
+            for (const cursel of ted.state.cursels) {
+                if (cursel.isCursor()) {
+                    cursel.toSelection();
+                    cursel.move('right', ted.state.lineContext());
+                    cursel.invert();
+                }
+                ted.state.curselInput(cursel, '', '', '');
             }
-            );
-            ted.input('');
+            ted.render();
+            ted.fuseCursels();
         }
         ,
         copy: ()=>{

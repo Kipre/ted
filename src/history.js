@@ -18,7 +18,6 @@ export class History {
     
     undo(way) {
         this.pos = Math.min(0, Math.max(this.pos + way, -this.buffer.length));
-        console.log(this.pos, this.buffer.length);
         return this.buffer[this.buffer.length + this.pos];
     }
 }

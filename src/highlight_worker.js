@@ -32,7 +32,6 @@ class MessageQueue {
 
     push(message) {
         const last = this.queue[this.queue.length - 1];
-        console.log(last);
         if (last && last.type == message.type && last.line == message.line) {
             this.queue[this.queue.length - 1] = message;
         } else {
