@@ -184,7 +184,7 @@ export class StateManager extends HTMLElement {
 
     cursorContext() {
         if (this.cursels.length != 1 || !this.cursels[0].isCursor())
-            return;
+            return {};
         const {l, c} = this.cursels[0];
         return {
             before: this.lines[l][c - 1] ?? '',
@@ -313,25 +313,20 @@ export class StateManager extends HTMLElement {
     }
 
     input(left, mid='', right='') {
-        /* prepare variables for historic caching */
-        //         const curselsToSave = this.cursels.map(c=>c.toArray());
-        //         const linesToSave = [];
-
-        /* main cursel loop */
         for (const cursel of this.cursels) {
             this.curselInput(cursel, left, mid, right);
         }
     }
 
     curselInput(cursel, left, mid='', right='') {
-        let [sl,sc,el,ec] = cursel.orderedPositions();
+        const [sl,sc,el,ec] = cursel.orderedPositions();
         let midLines = [];
         if (mid === null) {
             midLines.push(...this.lines.slice(sl, el + 1));
             midLines[0] = midLines[0].slice(sc)
-            midLines[midLines.length - 1] = midLines[midLines.length - 1].slice(0, ec - (el == sl)*sc)
+            midLines[midLines.length - 1] = midLines[midLines.length - 1].slice(0, ec - (el == sl) * sc)
         } else {
-            midLines = [''];
+            midLines = mid.split('\n');
         }
         const head = this.lines[sl].slice(0, sc) + left;
         const tail = right + this.lines[el].slice(ec);
@@ -348,54 +343,70 @@ export class StateManager extends HTMLElement {
         newCurselPositions.push(sl + newLines.length - 1, newLines[newLines.length - 1].length);
         newLines[newLines.length - 1] += tailLines[0];
         newLines.push(...tailLines.slice(1));
+        const lastChar = newLines[newLines.length - 1].length - tail.length;
+
+        /* update highlight categories */
+        if (this.current.categories) {
+            const newCats = newLines.map(l=>new Uint8Array(l.length));
+            newCats[0].set(this.current.categories[sl].slice(0, sc))
+            try {
+                newCats[newLines.length - 1].set(this.current.categories[el].slice(ec), lastChar);
+            } catch (e) {}
+            this.highlightLines(sl, head + midLines.join('\n') + tail);
+            console.log(lastChar, newCats, this.current.categories.slice(sl, el + 1))
+            this.current.categories.splice(sl, el - sl + 1, ...newCats);
+        }
 
         this.lines.splice(sl, el - sl + 1, ...newLines);
-        for (let j = 0; j < this.cursels.length; j++) {
+        for (let j = 0; j < this.cursels.length; j++)
             this.cursels[j].adjust(el, ec, sl - el + newLines.length - 1, newCurselPositions[3] + right.length - ec);
-        }
         cursel.relocate(...newCurselPositions);
+        cursel.tighten();
     }
 
-    input2(text) {
-        console.time('input')
-        const curselsToSave = this.cursels.map(c=>c.toArray());
-        const linesToSave = []
-        this.cursels.forEach((c)=>{
-            const [sl,sc,el,ec] = c.orderedPositions();
-            const backup = {
-                lines: this.lines.slice(sl, el + 1),
-                i: sl
-            };
-            const head = this.lines[sl].slice(0, sc);
-            const tail = this.lines[el].slice(ec);
-            const newText = head + text + tail;
-            const newLines = newText.split('\n');
-            const lastLine = newLines.length - 1;
-            const lastChar = newLines[lastLine].length - tail.length;
-            if (this.current.categories) {
-                const newCats = newLines.map(l=>new Uint8Array(l.length));
-                newCats[0].set(this.current.categories[sl].slice(0, sc))
-                try {
-                    newCats[lastLine].set(this.current.categories[el].slice(ec), lastChar - 1);
-                } catch (e) {}
-                this.highlightLines(sl, newText);
-                this.current.categories.splice(sl, el - sl + 1, ...newCats);
-            }
-            backup.del = newLines.length;
-            this.lines.splice(sl, el - sl + 1, ...newLines);
-            c.toCursor(sl + newLines.length - 1, lastChar);
-            for (const k of this.cursels) {
-                if (k === c)
-                    break;
-                k.adjust(el, ec, sl - el + newLines.length - 1, lastChar - ec);
-            }
-            linesToSave.push(backup);
-        }
-        );
-        this.current.changed();
-        this.current.history.store(curselsToSave, linesToSave);
-        console.timeEnd('input')
+    newCategories(newLines) {
     }
+
+    //     input2(text) {
+    //         console.time('input')
+    //         const curselsToSave = this.cursels.map(c=>c.toArray());
+    //         const linesToSave = []
+    //         this.cursels.forEach((c)=>{
+    //             const [sl,sc,el,ec] = c.orderedPositions();
+    //             const backup = {
+    //                 lines: this.lines.slice(sl, el + 1),
+    //                 i: sl
+    //             };
+    //             const head = this.lines[sl].slice(0, sc);
+    //             const tail = this.lines[el].slice(ec);
+    //             const newText = head + text + tail;
+    //             const newLines = newText.split('\n');
+    //             const lastLine = newLines.length - 1;
+    //             const lastChar = newLines[lastLine].length - tail.length;
+    //             if (this.current.categories) {
+    //                 const newCats = newLines.map(l=>new Uint8Array(l.length));
+    //                 newCats[0].set(this.current.categories[sl].slice(0, sc))
+    //                 try {
+    //                     newCats[lastLine].set(this.current.categories[el].slice(ec), lastChar - 1);
+    //                 } catch (e) {}
+    //                 this.highlightLines(sl, newText);
+    //                 this.current.categories.splice(sl, el - sl + 1, ...newCats);
+    //             }
+    //             backup.del = newLines.length;
+    //             this.lines.splice(sl, el - sl + 1, ...newLines);
+    //             c.toCursor(sl + newLines.length - 1, lastChar);
+    //             for (const k of this.cursels) {
+    //                 if (k === c)
+    //                     break;
+    //                 k.adjust(el, ec, sl - el + newLines.length - 1, lastChar - ec);
+    //             }
+    //             linesToSave.push(backup);
+    //         }
+    //         );
+    //         this.current.changed();
+    //         this.current.history.store(curselsToSave, linesToSave);
+    //         console.timeEnd('input')
+    //     }
 
     highlightLines(lineNumber, text) {
         if (this.current.language)
@@ -405,33 +416,6 @@ export class StateManager extends HTMLElement {
                 text: text,
                 language: this.current.language
             })
-    }
-
-    aroundCursel(before, after) {
-        this.cursels.forEach((c)=>{
-            const [sl,sc,el,ec] = c.orderedPositions();
-            this.lines[el] = this.lines[el].slice(0, ec) + after + this.lines[el].slice(ec);
-            this.lines[sl] = this.lines[sl].slice(0, sc) + before + this.lines[sl].slice(sc);
-            if (this.current.categories) {
-                const startCat = new Uint8Array(this.lines[sl].length);
-                startCat.set(this.current.categories[sl].slice(0, sc));
-                startCat.set(this.current.categories[sl].slice(sc), sc + before);
-                const endCat = new Uint8Array(this.lines[el].length);
-                startCat.set(this.current.categories[el].slice(0, ec));
-                startCat.set(this.current.categories[el].slice(ec), ec + after);
-                try {
-                    newCats[lastLine].set(this.current.categories[el].slice(ec), lastChar - 1);
-                } catch (e) {}
-                this.highlightLines(sl, this.lines.slice(sl, el + 1).join('\n'));
-            }
-            c.adjustSelection(sl, 0, before.length);
-            for (const k of this.cursels) {
-                if (k === c)
-                    break;
-                k.adjustSelection(el, ec, before.length + after.length);
-            }
-        }
-        );
     }
 
     unredo(way) {
@@ -447,17 +431,23 @@ export class StateManager extends HTMLElement {
     }
 
     textFromCursel(curselIndex) {
-        let text = "";
+        let text;
         const cursel = this.cursels[curselIndex]
         const [sl,sc,el,ec] = cursel.orderedPositions();
         if (cursel.isCursor()) {
-            text = "\n" + this.lines[cursel.l];
+            return "\n" + this.lines[cursel.l];
         } else {
-            for (let i = sl; i <= el; ++i) {
-                const startChar = i == sl ? sc : 0
-                const endChar = i == el ? ec : this.lines[i].length + 1;
-                text += (this.lines[i] + '\n').slice(startChar, endChar);
-            }
+            return this.textFromSelection(cursel);
+        }
+    }
+
+    textFromSelection(cursel) {
+        let text = "";
+        const [sl,sc,el,ec] = cursel.orderedPositions();
+        for (let i = sl; i <= el; ++i) {
+            const startChar = i == sl ? sc : 0
+            const endChar = i == el ? ec : this.lines[i].length + 1;
+            text += (this.lines[i] + '\n').slice(startChar, endChar);
         }
         return text;
     }

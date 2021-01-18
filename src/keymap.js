@@ -38,6 +38,8 @@ export function keyToAction(e) {
             return 'newfile';
         case('o'):
             return 'openfolder';
+        case('t'):
+            return 'transpose';
         }
     } else {
         if (e.key.length == 1)

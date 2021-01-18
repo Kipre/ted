@@ -96,11 +96,11 @@ span.string-special {
     }
 
     span.string {
-        color: #e6db74;
+        color: #c5bc65;
     }
 
     span.variable {
-        color: #f8f8f2;
+        color: #dfdfdf;
     }
 
     span.constant-builtin {

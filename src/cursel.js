@@ -118,20 +118,6 @@ export class Cursel {
         } else
             this.move(way, context);
     }
-
-//     adjust(line, char, deltaLine, deltaChar) {
-//         if (this.l == line && this.c >= char)
-//             this.c += deltaChar;
-//         if (this.l >= line)
-//             this.l += deltaLine;
-//     }
-
-//     adjust(line, char, deltaLine, deltaChar) {
-//         if (this.l == line && this.c >= char)
-//             this.c += deltaChar;
-//         if (this.l >= line)
-//             this.l += deltaLine;
-//     }
     
     adjust(line, char, deltaLine, deltaChar) {
         if (this.c >= char) {
