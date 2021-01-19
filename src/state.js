@@ -353,7 +353,6 @@ export class StateManager extends HTMLElement {
                 newCats[newLines.length - 1].set(this.current.categories[el].slice(ec), lastChar);
             } catch (e) {}
             this.highlightLines(sl, head + midLines.join('\n') + tail);
-            console.log(lastChar, newCats, this.current.categories.slice(sl, el + 1))
             this.current.categories.splice(sl, el - sl + 1, ...newCats);
         }
 
@@ -362,11 +361,9 @@ export class StateManager extends HTMLElement {
             this.cursels[j].adjust(el, ec, sl - el + newLines.length - 1, newCurselPositions[3] + right.length - ec);
         cursel.relocate(...newCurselPositions);
         cursel.tighten();
+        this.current.changed();
     }
-
-    newCategories(newLines) {
-    }
-
+    
     //     input2(text) {
     //         console.time('input')
     //         const curselsToSave = this.cursels.map(c=>c.toArray());

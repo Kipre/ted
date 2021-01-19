@@ -102,8 +102,18 @@ export const defineActions = (ted)=>{
             } else if (leftBrackets.includes(e.key) && ted.state.cursorContext().after === e.key) {
                 ted.state.moveCursels('right');
                 ted.render();
-            } else
-                ted.input(e.key);
+            } else {
+                for (const cursel of ted.state.cursels) {
+                    ted.state.curselInput(cursel, e.key, '', '');
+                    if (cursel.isCursor()) {
+                        ted.populateSomeLines(cursel.l, cursel.l + 1);
+                    } else {
+                        ted.populateLines();
+                    }
+                }
+                ted.updateLongestLine();
+                ted.renderCursels();
+            }
         }
         ,
         delete: e=>{

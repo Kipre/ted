@@ -10,3 +10,9 @@ Features:
     - multiple cursors
     - neural-network-based highlighting
     - partially auto-edited
+    
+Limitations:
+
+    - there are a lot
+    - works only on chrome (because of FileSystem API)
+    - no unicode support

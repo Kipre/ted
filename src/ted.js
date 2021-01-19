@@ -140,22 +140,32 @@ export class Ted extends HTMLElement {
     }
 
     render() {
-//         console.time('render');
+        //         console.time('render');
         this.refocus();
         this.relativeDiv.style.top = `-${this.currentDelta}px`;
         this.populateLines();
         this.vScrollbar.update(this.position, this.limit);
         this.renderCursels();
         this.updateLongestLine();
-//         console.timeEnd('render');
+
+        //         console.timeEnd('render');
     }
 
     populateLines() {
-        this.style.counterSet = `line ${this.currentLine}`;
+        const curLine = this.currentLine;
+        this.style.counterSet = `line ${curLine}`;
         for (let i = 0; i < this.nbLines; i++) {
-            this.lines[i].set(...this.state.pair(i + this.currentLine, this.currentChar, this.currentChar + this.nbChars));
+            this.lines[i].set(...this.state.pair(i + curLine, this.currentChar, this.currentChar + this.nbChars));
         }
 
+    }
+
+    populateSomeLines(from=0, to=null) {
+        const curLine = this.currentLine;
+        this.style.counterSet = `line ${curLine}`;
+        for (let i = from - curLine; i < Math.min((to - curLine) ?? this.nbLines, this.nbLines); i++) {
+            this.lines[i].set(...this.state.pair(i + curLine, this.currentChar, this.currentChar + this.nbChars));
+        }
     }
 
     get limit() {
@@ -200,7 +210,7 @@ export class Ted extends HTMLElement {
         this.lines = [];
         for (let i = 0; i < this.nbLines; i++) {
             const line = new Line(String.fromCodePoint(0));
-            line.style.height = `${this.charHeight}px`;
+            //             line.style.height = `${this.charHeight}px`;
             line.style.width = `${this.charWidth * this.nbChars}px`;
             this.lines.push(line);
             this.relativeDiv.appendChild(line);
@@ -308,13 +318,13 @@ export class Ted extends HTMLElement {
 
         window.addEventListener('resize', e=>this.resize());
 
-//         window.addEventListener('blur', e=>{
-//             this.state.cursels = [];
-//             this.render();
-//         }
-//         );
+        //         window.addEventListener('blur', e=>{
+        //             this.state.cursels = [];
+        //             this.render();
+        //         }
+        //         );
 
-//         window.matchMedia("(prefers-color-scheme: dark)").addListener(e=>this.setTheme(e.matches ? 'dark' : 'light'));
+        //         window.matchMedia("(prefers-color-scheme: dark)").addListener(e=>this.setTheme(e.matches ? 'dark' : 'light'));
     }
 }
 

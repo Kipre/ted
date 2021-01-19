@@ -209,5 +209,3 @@ export function drawCursel(ted, cursel) {
         }
     }
 }
-
-// customElements.define('ted-cursel', Cursel);
