@@ -166,7 +166,6 @@ export const defineActions = (ted)=>{
             }
         }
         ,
-
         indent: (e)=>{
             e.preventDefault();
             for (const cursel of ted.state.cursels) {

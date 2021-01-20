@@ -374,18 +374,20 @@ export class StateManager extends HTMLElement {
         for (let i = sl; i <= el; i++) {
             commented *= nothing.test(this.lines[i]) || comment.test(this.lines[i]);
         }
-        if (commented) {
-            for (let i = sl; i <= el; i++) {
-                this.lines[i] = this.lines[i].replace(comment, '');
-            }
-        } else {
-            for (let i = sl; i <= el; i++) {
-                if (!nothing.test(this.lines[i])) {
+        for (let i = sl; i <= el; i++) {
+            if (!nothing.test(this.lines[i])) {
+                if (commented) {
+                    this.lines[i] = this.lines[i].replace(comment, '');
+                } else {
                     this.lines[i] = '// ' + this.lines[i];
                 }
+                if (i == sl)
+                    cursel.update(cursel.l, Math.max(0, cursel.c + 3 * (0.5 - commented) * 2));
+                if (i == el)
+                    cursel.tc = Math.max(0, cursel.tc + 3 * (0.5 - commented) * 2);
             }
         }
-        this.highlightLines(sl, this.lines.slice(sl, el+1).join('\n'));
+        this.highlightLines(sl, this.lines.slice(sl, el + 1).join('\n'));
     }
 
     lineTransform(cursel, lineTransformation) {
@@ -393,19 +395,19 @@ export class StateManager extends HTMLElement {
         for (let i = sl; i <= el; i++) {
             this.lines[i] = lineTransformation(this.lines[i], i == sl, i == el);
         }
-        this.highlightLines(sl, this.lines.slice(sl, el+1).join('\n'));
+        this.highlightLines(sl, this.lines.slice(sl, el + 1).join('\n'));
     }
 
-//                 input2(text) {
-//                     console.time('input')
-//                     const curselsToSave = this.cursels.map(c=>c.toArray());
-//                     const linesToSave = []
-//                     this.cursels.forEach((c)=>{
-//                     const [sl,sc,el,ec] = c.orderedPositions();
-//                     const backup = {
-//                         lines: this.lines.slice(sl, el + 1),
-//                     i: sl
-//                 };
+    //                 input2(text) {
+    //                     console.time('input')
+    //                     const curselsToSave = this.cursels.map(c=>c.toArray());
+    //                     const linesToSave = []
+    //                     this.cursels.forEach((c)=>{
+    //                     const [sl,sc,el,ec] = c.orderedPositions();
+    //                     const backup = {
+    //                         lines: this.lines.slice(sl, el + 1),
+    //                     i: sl
+    //                 };
     //             const head = this.lines[sl].slice(0, sc);
     //             const tail = this.lines[el].slice(ec);
     //             const newText = head + text + tail;
