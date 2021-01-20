@@ -25,13 +25,15 @@ export function keyToAction(e) {
         case('z'):
             return 'undo';
         case(':'):
-            return 'comment';
+            return 'togglecomment';
         }
     } else if (e.shiftKey) {
         if (e.key.length == 1)
             return 'letter';
         if (e.key.includes('Arrow'))
             return 'moveselection'
+        if (e.key == 'Tab')
+            return 'unindent';
     } else if (e.altKey) {
         switch(e.key) {
         case('n'):
@@ -52,7 +54,7 @@ export function keyToAction(e) {
         case('Delete'):
             return 'delete';
         case('Tab'):
-            return 'tab';
+            return 'indent';
         case('Enter'):
             return 'newline';
             }

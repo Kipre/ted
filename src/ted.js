@@ -79,6 +79,7 @@ export class Ted extends HTMLElement {
             }
             if (!inserted)
                 this.state.cursels.unshift(this.selection);
+            console.log(this.state.cursels, inserted);
         }
         this.renderCursels();
     }

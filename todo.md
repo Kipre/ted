@@ -1,8 +1,7 @@
 # TODO
 
 - fix diverging indentation
-- fix cursor/selection state
-- backspace inside of brackets
+- Lines data container
 
 - draggable selection ?
 - reorder file tabs ?

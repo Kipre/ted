@@ -2,7 +2,11 @@ import {Cursel} from './cursel.js';
 import {config} from './config.js';
 import {History} from './history.js';
 
+/* some regexes */
 const indentRegex = /(^[ \t]*)\S?/;
+const nothing = /^ *$/;
+const indent = RegExp(`^ {${config.tabSize}}`);
+const comment = /^ *\/\/ ?/;
 
 const worker = config.highlight ? new Worker('src/highlight_worker.js') : null;
 
@@ -363,17 +367,45 @@ export class StateManager extends HTMLElement {
         cursel.tighten();
         this.current.changed();
     }
-    
-    //     input2(text) {
-    //         console.time('input')
-    //         const curselsToSave = this.cursels.map(c=>c.toArray());
-    //         const linesToSave = []
-    //         this.cursels.forEach((c)=>{
-    //             const [sl,sc,el,ec] = c.orderedPositions();
-    //             const backup = {
-    //                 lines: this.lines.slice(sl, el + 1),
-    //                 i: sl
-    //             };
+
+    toggleComment(cursel) {
+        const [sl,sc,el,ec] = cursel.orderedPositions();
+        let commented = true;
+        for (let i = sl; i <= el; i++) {
+            commented *= nothing.test(this.lines[i]) || comment.test(this.lines[i]);
+        }
+        if (commented) {
+            for (let i = sl; i <= el; i++) {
+                this.lines[i] = this.lines[i].replace(comment, '');
+            }
+        } else {
+            for (let i = sl; i <= el; i++) {
+                if (!nothing.test(this.lines[i])) {
+                    this.lines[i] = '// ' + this.lines[i];
+                }
+            }
+        }
+        this.highlightLines(sl, this.lines.slice(sl, el+1).join('\n'));
+    }
+
+    lineTransform(cursel, lineTransformation) {
+        const [sl,sc,el,ec] = cursel.orderedPositions();
+        for (let i = sl; i <= el; i++) {
+            this.lines[i] = lineTransformation(this.lines[i], i == sl, i == el);
+        }
+        this.highlightLines(sl, this.lines.slice(sl, el+1).join('\n'));
+    }
+
+//                 input2(text) {
+//                     console.time('input')
+//                     const curselsToSave = this.cursels.map(c=>c.toArray());
+//                     const linesToSave = []
+//                     this.cursels.forEach((c)=>{
+//                     const [sl,sc,el,ec] = c.orderedPositions();
+//                     const backup = {
+//                         lines: this.lines.slice(sl, el + 1),
+//                     i: sl
+//                 };
     //             const head = this.lines[sl].slice(0, sc);
     //             const tail = this.lines[el].slice(ec);
     //             const newText = head + text + tail;

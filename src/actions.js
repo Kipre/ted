@@ -2,6 +2,9 @@ import {Cursel} from './cursel.js';
 import {Options} from './options.js';
 import {config} from './config.js';
 
+const nothing = /^ *$/;
+const indent = RegExp(`^ {${config.tabSize}}`);
+
 const left = {
     ['{']: '}',
     ['(']: ')',
@@ -41,12 +44,22 @@ export const defineActions = (ted)=>{
             let curText, lastText = ted.state.textFromSelection(selections[selections.length - 1]);
             for (const selection of selections) {
                 curText = ted.state.textFromSelection(selection);
-                console.log(curText, lastText);
                 ted.state.curselInput(selection, '', lastText, '');
                 lastText = curText;
             }
             ted.render();
             ted.fuseCursels();
+        }
+        ,
+        selectnext: ()=>{}
+        ,
+        unindent: ()=>{}
+        ,
+        togglecomment: ()=>{
+            for (let i = 0; i < ted.state.cursels.length; i++) {
+                ted.state.toggleComment(ted.state.cursels[i]);
+            }
+            ted.render();
         }
         ,
         selectall: ()=>{
@@ -135,7 +148,7 @@ export const defineActions = (ted)=>{
         ,
         paste: ()=>{
             navigator.clipboard.readText().then(clipText=>{
-                // weird backspace at the end of pasted lines
+                // weird space at the end of pasted lines
                 clipText = clipText.replace(/\s\n/g, '\n');
                 ted.input(clipText);
             }
@@ -153,9 +166,41 @@ export const defineActions = (ted)=>{
             }
         }
         ,
-        tab: (e)=>{
+
+        indent: (e)=>{
             e.preventDefault();
-            ted.input(' '.repeat(config.tabSize));
+            for (const cursel of ted.state.cursels) {
+                ted.state.lineTransform(cursel, (line, first, last)=>{
+                    if (!nothing.test(line)) {
+                        if (first)
+                            cursel.update(cursel.l, Math.max(0, cursel.c + config.tabSize));
+                        if (last)
+                            cursel.tc = Math.max(0, cursel.tc + config.tabSize);
+                        return ' '.repeat(config.tabSize) + line;
+                    } else {
+                        return '';
+                    }
+                });
+            }
+            ted.render();
+        }
+        ,
+        unindent: (e)=>{
+            e.preventDefault();
+            for (const cursel of ted.state.cursels) {
+                ted.state.lineTransform(cursel, (line, first, last)=>{
+                    if (indent.test(line)) {
+                        if (first)
+                            cursel.update(cursel.l, Math.max(0, cursel.c - config.tabSize));
+                        if (last)
+                            cursel.tc = Math.max(0, cursel.tc - config.tabSize);
+                        return line.replace(indent, '');
+                    } else {
+                        return line;
+                    }
+                });
+            }
+            ted.render();
         }
         ,
         newline: ()=>{
