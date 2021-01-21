@@ -57,8 +57,10 @@ export function keyToAction(e) {
             return 'indent';
         case('Enter'):
             return 'newline';
+        case('Dead'):
+            return 'tick';
             }
     }
-    console.log(e.key);
+    console.log(e, e.key);
     return 'nothing';
 }

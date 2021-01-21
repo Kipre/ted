@@ -11,7 +11,6 @@ const left = {
     ['[']: ']',
     ['"']: '"',
     ["'"]: "'",
-    ['`']: '`',
 }
 
 const brackets = Object.keys(left);
@@ -106,6 +105,11 @@ export const defineActions = (ted)=>{
         ,
         redo: e=>{
             ted.state.unredo(1);
+        }
+        ,
+        tick: e=>{
+            ted.state.input('`');
+            ted.render();
         }
         ,
         letter: e=>{
