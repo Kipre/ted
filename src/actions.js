@@ -11,6 +11,7 @@ const left = {
     ['[']: ']',
     ['"']: '"',
     ["'"]: "'",
+    ["`"]: "`",
 }
 
 const brackets = Object.keys(left);
@@ -107,11 +108,6 @@ export const defineActions = (ted)=>{
             ted.state.unredo(1);
         }
         ,
-        tick: e=>{
-            ted.state.input('`');
-            ted.render();
-        }
-        ,
         letter: e=>{
             if (brackets.includes(e.key)) {
                 ted.state.input(e.key, null, left[e.key]);
@@ -121,8 +117,9 @@ export const defineActions = (ted)=>{
                 ted.render();
             } else {
                 for (const cursel of ted.state.cursels) {
+                    const wasCursor = cursel.isCursor()
                     ted.state.curselInput(cursel, e.key, '', '');
-                    if (cursel.isCursor()) {
+                    if (wasCursor) {
                         ted.populateSomeLines(cursel.l, cursel.l + 1);
                     } else {
                         ted.populateLines();
@@ -173,7 +170,7 @@ export const defineActions = (ted)=>{
         indent: (e)=>{
             e.preventDefault();
             for (const cursel of ted.state.cursels) {
-                ted.state.lineTransform(cursel, (line, first, last)=>{
+                ted.state.lineTransform(cursel, (line,first,last)=>{
                     if (!nothing.test(line)) {
                         if (first)
                             cursel.update(cursel.l, Math.max(0, cursel.c + config.tabSize));
@@ -183,7 +180,8 @@ export const defineActions = (ted)=>{
                     } else {
                         return '';
                     }
-                });
+                }
+                );
             }
             ted.render();
         }
@@ -191,7 +189,7 @@ export const defineActions = (ted)=>{
         unindent: (e)=>{
             e.preventDefault();
             for (const cursel of ted.state.cursels) {
-                ted.state.lineTransform(cursel, (line, first, last)=>{
+                ted.state.lineTransform(cursel, (line,first,last)=>{
                     if (indent.test(line)) {
                         if (first)
                             cursel.update(cursel.l, Math.max(0, cursel.c - config.tabSize));
@@ -201,20 +199,25 @@ export const defineActions = (ted)=>{
                     } else {
                         return line;
                     }
-                });
+                }
+                );
             }
             ted.render();
         }
         ,
         newline: ()=>{
-            const indent = ' '.repeat(config.repeatIndentation * ted.state.indentation(ted.state.cursels[0].l));
-            let newLine = '\n' + indent;
+            let cursel = ted.state.cursels[0];
             const {before, after} = ted.state.cursorContext();
-            if (before == '{' && after == '}') {
-                ted.state.input(newLine + ' '.repeat(config.tabSize), '', newLine);
-            } else {
-                ted.state.input(newLine);
-            }
+            if (ted.state.cursels.length == 1 && before == '{' && after == '}') {
+                const size = Math.min(config.repeatIndentation * ted.state.indentation(cursel.l), cursel.c)
+                const indent = ' '.repeat(size);
+                ted.state.curselInput(cursel, '\n' + indent + ' '.repeat(config.tabSize), '', '\n' + indent);
+            } else
+                for (cursel of ted.state.cursels) {
+                    const size = Math.min(config.repeatIndentation * ted.state.indentation(cursel.l), cursel.c)
+                    const indent = ' '.repeat(size);
+                    ted.state.curselInput(cursel, '\n' + indent);
+                }
             ted.render();
         }
         ,

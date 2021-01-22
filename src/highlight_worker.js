@@ -2,12 +2,7 @@ const space = ' '.charCodeAt(0) - 9;
 
 const windowSize = 256;
 
-const categories = ['nothing', "property", "variable-builtin", "variable", 
-                    "string", "function-method", "variable-parameter", "operator", 
-                    "keyword", "function", 'number', 'comment', 'constant-builtin', 
-                    "string-special", "embedded", "punctuation-special", 
-                    "constructor", "constant", "function-builtin", "escape", 
-                    "keyword-argument", "type"];
+const categories = ['nothing', "property", "variable-builtin", "variable", "string", "function-method", "variable-parameter", "operator", "keyword", "function", 'number', 'comment', 'constant-builtin', "string-special", "embedded", "punctuation-special", "constructor", "constant", "function-builtin", "escape", "keyword-argument", "type"];
 
 const languages = ['javascript'];
 
@@ -22,7 +17,7 @@ async function loadModels() {
         //         console.log(models[lang].predict(tf.zeros([1, window_size], 'int32')));
     }
 }
-                             
+
 class MessageQueue {
 
     constructor(loadPromise) {
@@ -57,17 +52,19 @@ onmessage = e=>{
 }
 
 function handleMessage(message) {
-    if (message.type == "everything") {
-        postMessage({
-            type: 'everything',
-            categories: wholeText(message.text, message.language)
-        });
-    } else if (message.type == 'line') {
-        postMessage({
-            type: 'line',
-            line: message.line,
-            categories: wholeText(message.text, message.language)
-        })
+    if (message.language in models) {
+        if (message.type == "everything") {
+            postMessage({
+                type: 'everything',
+                categories: wholeText(message.text, message.language)
+            });
+        } else if (message.type == 'line') {
+            postMessage({
+                type: 'line',
+                line: message.line,
+                categories: wholeText(message.text, message.language)
+            })
+        }
     }
 }
 
