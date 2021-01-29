@@ -151,6 +151,7 @@ export const defineActions = (ted)=>{
             navigator.clipboard.readText().then(clipText=>{
                 // weird space at the end of pasted lines
                 clipText = clipText.replace(/\s\n/g, '\n');
+                clipText = clipText.replace(/\t/g, ' '.repeat(config.tabSize));
                 ted.input(clipText);
             }
             );
@@ -171,14 +172,12 @@ export const defineActions = (ted)=>{
             e.preventDefault();
             for (const cursel of ted.state.cursels) {
                 ted.state.lineTransform(cursel, (line,first,last)=>{
-                    if (!nothing.test(line)) {
+                    if (!nothing.test(line) || cursel.isCursor()) {
                         if (first)
                             cursel.update(cursel.l, Math.max(0, cursel.c + config.tabSize));
                         if (last)
                             cursel.tc = Math.max(0, cursel.tc + config.tabSize);
                         return ' '.repeat(config.tabSize) + line;
-                    } else {
-                        return '';
                     }
                 }
                 );

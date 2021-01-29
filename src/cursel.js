@@ -47,9 +47,9 @@ export class Cursel {
 
     relocate(sl, sc, el, ec) {
         if (this.l <= this.tl && this.c <= this.tc) {
-            [this.l, this.c, this.tl, this.tc] = [sl, sc, el, ec];
+            [this.l, this.c, this.hc, this.tl, this.tc] = [sl, sc, sc, el, ec];
         } else {
-            [this.l, this.c, this.tl, this.tc] = [el, ec, sl, sc]
+            [this.l, this.c, this.hc, this.tl, this.tc] = [el, ec, ec, sl, sc]
         }
     }
 

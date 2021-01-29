@@ -72,7 +72,9 @@ export class State {
         const self = new State();
         self.handle = handle;
         const file = await handle.getFile();
-        const text = await file.text();
+        const tab = ' '.repeat(config.tabSize);
+        let text = await file.text();
+        text = text.replaceAll(/\t/gm, tab);
         self.lines = text.split('\n');
         self.language = languageFromName(handle.name);
         self.saved = true;
