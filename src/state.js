@@ -263,6 +263,7 @@ export class StateManager extends HTMLElement {
         this.cursels = this.instances[i].cursels;
         this.position = this.instances[i].position;
         this.hPosition = this.instances[i].hPosition;
+        console.log(this.instances[i].handle?.name);
         this.current.language = languageFromName(this.instances[i].handle?.name);
         if (this.current.language && config.highlight)
             worker.postMessage({
@@ -511,6 +512,13 @@ export class StateManager extends HTMLElement {
             }]
         };
         state.handle = await window.showSaveFilePicker(options);
+        state.language = languageFromName(state.handle.name);
+        if (state.language && config.highlight)
+            worker.postMessage({
+                type: 'everything',
+                language: state.language,
+                text: state.lines.join('\n')
+            });
         await this.saveFile(state);
     }
 

@@ -61,6 +61,21 @@ export class Line extends HTMLElement {
             this.classList.remove('counted');
         }
     }
+
+    set1(val, cats) {
+        this.innerHTML = '';
+        if (val !== String.fromCodePoint(0)) {
+            for (let i = 0; i < val.length; i++) {
+                const span = document.createElement('span');
+                if (cats)
+                span.classList.add(categories[cats[i]]);
+                span.innerText = val[i];
+                this.appendChild(span);
+            }
+            this.classList.add('counted');
+        } else
+            this.classList.remove('counted');
+    }
 }
 
 customElements.define('ted-line', Line);

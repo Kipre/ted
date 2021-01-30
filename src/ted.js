@@ -141,7 +141,7 @@ export class Ted extends HTMLElement {
     }
 
     render() {
-        //         console.time('render');
+//                 console.time('render');
         this.refocus();
         this.relativeDiv.style.top = `-${this.currentDelta}px`;
         this.populateLines();
@@ -149,7 +149,7 @@ export class Ted extends HTMLElement {
         this.renderCursels();
         this.updateLongestLine();
 
-        //         console.timeEnd('render');
+//                 console.timeEnd('render');
     }
 
     populateLines() {
