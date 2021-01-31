@@ -355,8 +355,8 @@ export class StateManager extends HTMLElement {
         /* update highlight categories */
         if (this.current.categories) {
             const newCats = newLines.map(l=>new Uint8Array(l.length));
-            newCats[0].set(this.current.categories[sl].slice(0, sc))
             try {
+                newCats[0].set(this.current.categories[sl].slice(0, sc))
                 newCats[newLines.length - 1].set(this.current.categories[el].slice(ec), lastChar);
             } catch (e) {}
             this.highlightLines(sl, head + midLines.join('\n') + tail);
