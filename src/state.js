@@ -44,9 +44,6 @@ export class State {
         item.setAttribute('draggable', 'true');
         item.textContent = this.handle?.name || 'untitled';
         this.domElement = item;
-        item.rename = ()=>{
-            // FileSystem API file renaming ?
-        }
         return item;
     }
 
@@ -232,7 +229,11 @@ export class StateManager extends HTMLElement {
             }
             // Rename tab
             item.ondblclick = e=>{
-                item.rename();
+                if (t.handle) {
+                    t.handle.getParent(parent=>t.handle.moveTo(parent, "newname"));
+                } else {
+                }
+                this.render();
             }
             this.appendChild(item);
         }
