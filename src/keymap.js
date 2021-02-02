@@ -7,6 +7,8 @@ export function keyToAction(e) {
             return 'togglecommandline';
         case('Z'):
             return 'redo';
+        case('S'):
+            return 'saveas';
         }
     } else if (e.ctrlKey) {
         switch(e.key) {

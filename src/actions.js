@@ -235,8 +235,16 @@ export const defineActions = (ted)=>{
         }
         ,
         cut: e=>{
-            navigator.clipboard.writeText(ted.state.textFromCursel(0));
-            ted.input('');
+            const cursel = ted.state.cursels[0];
+            if (cursel?.isCursor()) {
+                navigator.clipboard.writeText('\n' + ted.state.lines[cursel.l]);
+                ted.state.lines.splice(cursel.l, 1);
+                ted.state.cursels.splice(0, 1);
+            } else if (cursel) {
+                navigator.clipboard.writeText(ted.state.textFromSelection(cursel));
+                ted.curselInput(cursel, '');
+            }
+            ted.render();
         }
         ,
         nothing: ()=>{}

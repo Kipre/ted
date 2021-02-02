@@ -12,7 +12,8 @@ const worker = config.highlight ? new Worker('src/highlight_worker.js') : null;
 
 const extensions = {
     javascript: ['.js'],
-    python: ['.py']
+    python: ['.py'],
+    cpp: ['.c', '.h', '.cpp', '.hpp']
 }
 
 function languageFromName(name) {
@@ -43,6 +44,9 @@ export class State {
         item.setAttribute('draggable', 'true');
         item.textContent = this.handle?.name || 'untitled';
         this.domElement = item;
+        item.rename = ()=>{
+            // FileSystem API file renaming ?
+        }
         return item;
     }
 
@@ -225,6 +229,10 @@ export class StateManager extends HTMLElement {
                     e.preventDefault();
                     this.close(i);
                 }
+            }
+            // Rename tab
+            item.ondblclick = e=>{
+                item.rename();
             }
             this.appendChild(item);
         }
