@@ -1,6 +1,5 @@
 # TODO
 
-- Lines data container ?
 - implement block selection rendering
 - implement history
 - tab handling ~
@@ -8,3 +7,4 @@
 
 - draggable selection ?
 - reorder file tabs ?
+- Lines data container ?

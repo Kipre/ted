@@ -242,7 +242,7 @@ export const defineActions = (ted)=>{
                 ted.state.cursels.splice(0, 1);
             } else if (cursel) {
                 navigator.clipboard.writeText(ted.state.textFromSelection(cursel));
-                ted.curselInput(cursel, '');
+                ted.state.curselInput(cursel, '');
             }
             ted.render();
         }
