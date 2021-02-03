@@ -272,7 +272,6 @@ export class StateManager extends HTMLElement {
         this.cursels = this.instances[i].cursels;
         this.position = this.instances[i].position;
         this.hPosition = this.instances[i].hPosition;
-        console.log(this.instances[i].handle?.name);
         this.current.language = languageFromName(this.instances[i].handle?.name);
         if (this.current.language && config.highlight)
             worker.postMessage({
