@@ -4,7 +4,9 @@ const windowSize = 256;
 
 const categories = ['nothing', "property", "variable-builtin", "variable", "string", "function-method", "variable-parameter", "operator", "keyword", "function", 'number', 'comment', 'constant-builtin', "string-special", "embedded", "punctuation-special", "constructor", "constant", "function-builtin", "escape", "keyword-argument", "type"];
 
-const languages = ['javascript'];
+const languages = ['python', 'javascript'];
+
+const path = (name) => `../models/${name}/model.json`
 
 let models = {};
 
@@ -12,8 +14,9 @@ let models = {};
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.8.4/dist/tf.min.js');
 
 async function loadModels() {
+    models.core = await tf.loadGraphModel(path('core'));
     for (const lang of languages) {
-        models[lang] = await tf.loadGraphModel(`../models/${lang}/model.json`);
+        models[lang] = await tf.loadGraphModel(path(lang));
         //         console.log(models[lang].predict(tf.zeros([1, window_size], 'int32')));
     }
 }
@@ -77,8 +80,9 @@ function wholeText(text, language) {
     for (let i = 0; i < nbChunks; i++) {
         batch.push(letters.slice(i * windowSize, (i + 1) * windowSize));
     }
-
-    const classes = tf.argMax(models[language].predict(tf.tensor(batch, [nbChunks, windowSize], 'int32')), -1).dataSync();
+    const features = models.core.predict(tf.tensor(batch, [nbChunks, windowSize], 'int32'));
+    const logits = models[language].predict(features);
+    const classes = tf.argMax(logits, -1).dataSync();
 
     let currentPos = 0;
     let result = [];

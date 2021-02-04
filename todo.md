@@ -1,9 +1,10 @@
 # TODO
 
 - implement block selection rendering
-- implement history
+- implement history !!
 - tab handling ~
 - fix language leak on tab close
+- language-specific tools
 
 - draggable selection ?
 - reorder file tabs ?
