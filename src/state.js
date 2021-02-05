@@ -6,7 +6,6 @@ import {History} from './history.js';
 const indentRegex = /(^[ \t]*)\S?/;
 const nothing = /^ *$/;
 const indent = RegExp(`^ {${config.tabSize}}`);
-const comment = /^ *\/\/ ?/;
 
 const worker = config.highlight ? new Worker('src/highlight_worker.js') : null;
 
@@ -379,23 +378,24 @@ export class StateManager extends HTMLElement {
         this.current.changed();
     }
 
-    toggleComment(cursel) {
+    toggleComment(cursel, comment, commentRegex) {
+        const len = comment.length + 1;
         const [sl,sc,el,ec] = cursel.orderedPositions();
         let commented = true;
         for (let i = sl; i <= el; i++) {
-            commented *= nothing.test(this.lines[i]) || comment.test(this.lines[i]);
+            commented *= nothing.test(this.lines[i]) || commentRegex.test(this.lines[i]);
         }
         for (let i = sl; i <= el; i++) {
             if (!nothing.test(this.lines[i])) {
                 if (commented) {
-                    this.lines[i] = this.lines[i].replace(comment, '');
+                    this.lines[i] = this.lines[i].replace(commentRegex, '');
                 } else {
-                    this.lines[i] = '// ' + this.lines[i];
+                    this.lines[i] = comment + ' ' + this.lines[i];
                 }
                 if (i == sl)
-                    cursel.update(cursel.l, Math.max(0, cursel.c + 3 * (0.5 - commented) * 2));
+                    cursel.update(cursel.l, Math.max(0, cursel.c + len * (0.5 - commented) * 2));
                 if (i == el)
-                    cursel.tc = Math.max(0, cursel.tc + 3 * (0.5 - commented) * 2);
+                    cursel.tc = Math.max(0, cursel.tc + len * (0.5 - commented) * 2);
             }
         }
         this.highlightLines(sl, this.lines.slice(sl, el + 1).join('\n'));

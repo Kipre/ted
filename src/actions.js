@@ -1,5 +1,6 @@
 import {Cursel} from './cursel.js';
 import {Options} from './options.js';
+import {language_config} from './languages.js';
 import {config} from './config.js';
 
 const nothing = /^ *$/;
@@ -56,10 +57,15 @@ export const defineActions = (ted)=>{
         unindent: ()=>{}
         ,
         togglecomment: ()=>{
-            for (let i = 0; i < ted.state.cursels.length; i++) {
-                ted.state.toggleComment(ted.state.cursels[i]);
+            let lang;
+            if (lang = ted.state.current.language) {
+                const {slComment, slRegex} = language_config[lang];
+                console.log(slComment, slRegex);
+                for (let i = 0; i < ted.state.cursels.length; i++) {
+                    ted.state.toggleComment(ted.state.cursels[i], slComment, slRegex);
+                }
+                ted.render();
             }
-            ted.render();
         }
         ,
         selectall: ()=>{
@@ -205,18 +211,23 @@ export const defineActions = (ted)=>{
         }
         ,
         newline: ()=>{
-            let cursel = ted.state.cursels[0];
-            const {before, after} = ted.state.cursorContext();
-            if (ted.state.cursels.length == 1 && before == '{' && after == '}') {
-                const size = Math.min(config.repeatIndentation * ted.state.indentation(cursel.l), cursel.c)
-                const indent = ' '.repeat(size);
-                ted.state.curselInput(cursel, '\n' + indent + ' '.repeat(config.tabSize), '', '\n' + indent);
-            } else
-                for (cursel of ted.state.cursels) {
+            let language, cursel = ted.state.cursels[0];
+            if (ted.state.cursels.length == 1 && (language = ted.state.current.language)) {
+                const {newLineIndent: langSpec} = language_config[language];
+                const {before, after} = ted.state.cursorContext();
+                if (ted.state.cursels.length == 1 && langSpec.before.test(before) && langSpec.after.test(after)) {
                     const size = Math.min(config.repeatIndentation * ted.state.indentation(cursel.l), cursel.c)
                     const indent = ' '.repeat(size);
-                    ted.state.curselInput(cursel, '\n' + indent);
+                    ted.state.curselInput(cursel, '\n' + indent + ' '.repeat(config.tabSize), '', '\n' + indent);
+                    ted.render();
+                    return;
                 }
+            }
+            for (cursel of ted.state.cursels) {
+                const size = Math.min(config.repeatIndentation * ted.state.indentation(cursel.l), cursel.c)
+                const indent = ' '.repeat(size);
+                ted.state.curselInput(cursel, '\n' + indent);
+            }
             ted.render();
         }
         ,

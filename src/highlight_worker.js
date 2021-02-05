@@ -6,7 +6,7 @@ const categories = ['nothing', "property", "variable-builtin", "variable", "stri
 
 const languages = ['python', 'javascript'];
 
-const path = (name) => `../models/${name}/model.json`
+const path = (name) => `../languages/${name}/model.json`
 
 let models = {};
 
