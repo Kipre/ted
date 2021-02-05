@@ -60,7 +60,6 @@ export const defineActions = (ted)=>{
             let lang;
             if (lang = ted.state.current.language) {
                 const {slComment, slRegex} = language_config[lang];
-                console.log(slComment, slRegex);
                 for (let i = 0; i < ted.state.cursels.length; i++) {
                     ted.state.toggleComment(ted.state.cursels[i], slComment, slRegex);
                 }
@@ -184,6 +183,8 @@ export const defineActions = (ted)=>{
                         if (last)
                             cursel.tc = Math.max(0, cursel.tc + config.tabSize);
                         return ' '.repeat(config.tabSize) + line;
+                    } else {
+                        return line;
                     }
                 }
                 );
@@ -218,7 +219,10 @@ export const defineActions = (ted)=>{
                 if (ted.state.cursels.length == 1 && langSpec.before.test(before) && langSpec.after.test(after)) {
                     const size = Math.min(config.repeatIndentation * ted.state.indentation(cursel.l), cursel.c)
                     const indent = ' '.repeat(size);
-                    ted.state.curselInput(cursel, '\n' + indent + ' '.repeat(config.tabSize), '', '\n' + indent);
+                    ted.state.curselInput(cursel, 
+                                          '\n' + indent + ' '.repeat(config.tabSize), 
+                                          '', 
+                                          langSpec.unindent ? '\n' + indent : '');
                     ted.render();
                     return;
                 }

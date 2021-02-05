@@ -2,9 +2,12 @@
 
 ## Features
 
-- implement block selection rendering
 - implement history !!
+- implement block selection rendering
 - tab handling ~
+- make highlight category extrapolation on (char)input
+- make highlight follow the indentation
+- double click on word
 
 ## Bugs
 

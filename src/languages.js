@@ -4,7 +4,8 @@ export const language_config = {
         slRegex: /^ *\/\/ ?/,
         newLineIndent: {
             before: /{/,
-            after: /}/
+            after: /}/,
+            unindent: true
         }
     },
     python: {

@@ -175,7 +175,7 @@ export class Ted extends HTMLElement {
     prepareDOM() {
         this.innerHTML = "";
 
-        this.state.style.height = `${config.headerHeight}px`;
+        this.state.style.height = config.headerHeight.toString() + 'px';
         this.state.setWidth(this.viewport.width);
         this.appendChild(this.state);
 
