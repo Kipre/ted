@@ -1,6 +1,5 @@
 import {config} from './config.js';
 
-
 export class History {
     constructor() {
         this.lastTime = 0;

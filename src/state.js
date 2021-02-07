@@ -230,8 +230,7 @@ export class StateManager extends HTMLElement {
             item.ondblclick = e=>{
                 if (t.handle) {
                     t.handle.getParent(parent=>t.handle.moveTo(parent, "newname"));
-                } else {
-                }
+                } else {}
                 this.render();
             }
             this.appendChild(item);
@@ -363,7 +362,11 @@ export class StateManager extends HTMLElement {
         if (this.current.categories) {
             const newCats = newLines.map(l=>new Uint8Array(l.length));
             try {
+                /* fill head categories */
                 newCats[0].set(this.current.categories[sl].slice(0, sc))
+                /* extrapolate current category for one character */
+                newCats[0][sc] = this.current.categories[sl][sc - 1];
+                /* fill tail categories */
                 newCats[newLines.length - 1].set(this.current.categories[el].slice(ec), lastChar);
             } catch (e) {}
             this.highlightLines(sl, head + midLines.join('\n') + tail);
@@ -371,8 +374,11 @@ export class StateManager extends HTMLElement {
         }
 
         this.lines.splice(sl, el - sl + 1, ...newLines);
-        for (let j = 0; j < this.cursels.length; j++)
+        for (let j = 0; j < this.cursels.length; j++) {
+            console.log(this.cursels[j].orderedPositions())
             this.cursels[j].adjust(el, ec, sl - el + newLines.length - 1, newCurselPositions[3] + right.length - ec);
+            console.log(this.cursels[j].orderedPositions())
+        }
         cursel.relocate(...newCurselPositions);
         cursel.tighten();
         this.current.changed();
