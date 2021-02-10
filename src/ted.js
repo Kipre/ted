@@ -69,16 +69,17 @@ export class Ted extends HTMLElement {
             this.state.cursels = [this.selection];
         } else {
             // sorted insert
-            let inserted = false;
-            for (const [i,c] of this.state.cursels.entries()) {
-                if (before(c.l, c.c, line, char)) {
-                    this.state.cursels.splice(i, 0, this.selection);
-                    inserted = true;
-                    break;
-                }
-            }
-            if (!inserted)
-                this.state.cursels.unshift(this.selection);
+//             let inserted = false;
+//             for (const [i,c] of this.state.cursels.entries()) {
+//                 if (before(c.l, c.c, line, char)) {
+//                     this.state.cursels.splice(i, 0, this.selection);
+//                     inserted = true;
+//                     break;
+//                 }
+//             }
+//             if (!inserted)
+//                 this.state.cursels.unshift(this.selection);
+            this.state.cursels.push(this.selection);
         }
         this.renderCursels();
     }
@@ -313,6 +314,7 @@ export class Ted extends HTMLElement {
             this.selection?.tighten();
             this.selection = null;
             this.fuseCursels();
+//             console.log(this.state.cursels);
         }
         );
 

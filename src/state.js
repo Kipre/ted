@@ -375,9 +375,8 @@ export class StateManager extends HTMLElement {
 
         this.lines.splice(sl, el - sl + 1, ...newLines);
         for (let j = 0; j < this.cursels.length; j++) {
-            console.log(this.cursels[j].orderedPositions())
+//             console.log(this.cursels[j], el, ec, sl - el + newLines.length - 1, newCurselPositions[3] + right.length - ec)
             this.cursels[j].adjust(el, ec, sl - el + newLines.length - 1, newCurselPositions[3] + right.length - ec);
-            console.log(this.cursels[j].orderedPositions())
         }
         cursel.relocate(...newCurselPositions);
         cursel.tighten();
