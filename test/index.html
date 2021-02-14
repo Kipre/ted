@@ -1,22 +1,31 @@
 <style>
-  html {
-    background: #171717;
-  }
+    html {
+        background: #171717;
+    }
 </style>
 <script type='module'>
+
   import bro from './brotest/brotest.js';
 
   import {Cursel} from '../src/cursel.js';
 
   bro.test('test adjust on a precedent cursor', ()=>{
     const a = Cursel.cursor(1, 4);
-    a.adjust2(2, 3, 1, 6);
+    a.adjust(2, 3, 1, 6);
     bro.expect(a).toMatchObject({l: 1, c:4, tl: null, tc: null})
+  });
+
+  bro.test('test adjust on a precedent like a backspace', ()=>{
+    const a = Cursel.cursor(1, 4);
+    a.adjust(1, 7, 1, 6);
+    bro.expect(a).toMatchObject({l: 1, c:4, tl: null, tc: null});
+    a.adjust(1, 3, 1, 2);
+    bro.expect(a).toMatchObject({l: 1, c:3, tl: null, tc: null});
   });
 
   bro.test('test adjust just after', ()=>{
     const a = Cursel.cursor(1, 4);
-    a.adjust2(1, 3, 1, 6);
+    a.adjust(1, 3, 1, 6);
     bro.expect(a).toMatchObject({l: 1, c:7, tl: null, tc: null})
   });
 
@@ -29,7 +38,7 @@
     const cursels = [a, b, c, d];
 
     for (const k of cursels) {
-        k.adjust2(2, 3, 1, 6);
+        k.adjust(2, 3, 1, 6);
     }
     bro.expect(a).toMatchObject({l: 1, c:4, tl: null, tc: null});
     bro.expect(b).toMatchObject({l: 1, c:8, tl: null, tc: null});
@@ -37,5 +46,24 @@
     bro.expect(d).toMatchObject({l: 2, c:2, tl: null, tc: null});
   });
 
+  bro.test('adjustent of a neighbour', _=>{
+    const a = Cursel.cursor(1, 4);
+    a.adjust(1, 4, 1, 5);
+    bro.expect(a).toMatchObject({l: 1, c: 5, tl: null, tc: null});
+  });
+
+  import {StateManager} from '../src/state.js';
+
+  bro.test('test state manager', _=>{
+    const self = new StateManager(_=>{}, false);
+    self.lines = ['this', 'is some', 'text', ''];
+
+    bro.expect(self.linesFromCursel(Cursel.selection(1, 3, 2, 4))).toEqual(['some', 'text']);
+    bro.expect(self.linesFromCursel(Cursel.selection(1, 0, 0, 4))).toEqual(['', '']);
+  });
+
   bro.run();
+
+
+
 </script>

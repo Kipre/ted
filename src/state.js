@@ -97,7 +97,7 @@ export class State {
 }
 
 export class StateManager extends HTMLElement {
-    constructor(tedRender) {
+    constructor(tedRender, useIndexedDB=true) {
         super();
         this.tedRender = tedRender;
         this.barPosition = 0;
@@ -333,22 +333,15 @@ export class StateManager extends HTMLElement {
 
     curselInput(cursel, left, mid='', right='') {
         const [sl,sc,el,ec] = cursel.orderedPositions();
-        let midLines = [];
-        if (mid === null) {
-            midLines.push(...this.lines.slice(sl, el + 1));
-            midLines[0] = midLines[0].slice(sc)
-            midLines[midLines.length - 1] = midLines[midLines.length - 1].slice(0, ec - (el == sl) * sc)
-        } else {
-            midLines = mid.split('\n');
-        }
+        const ogLines = this.linesFromCursel(cursel);
+        const midLines = mid == '' ? [''] : mid(ogLines.join('\n')).split('\n');
         const head = this.lines[sl].slice(0, sc) + left;
         const tail = right + this.lines[el].slice(ec);
         const newLines = head.split('\n');
         const tailLines = tail.split('\n');
-        const newCurselPositions = [];
 
         /* append mid lines */
-        newCurselPositions.push(sl + newLines.length - 1, newLines[newLines.length - 1].length);
+        const newCurselPositions = [sl + newLines.length - 1, newLines[newLines.length - 1].length];
         newLines[newLines.length - 1] += midLines[0];
         newLines.push(...midLines.slice(1));
 
@@ -375,8 +368,10 @@ export class StateManager extends HTMLElement {
 
         this.lines.splice(sl, el - sl + 1, ...newLines);
         for (let j = 0; j < this.cursels.length; j++) {
-//             console.log(this.cursels[j], el, ec, sl - el + newLines.length - 1, newCurselPositions[3] + right.length - ec)
-            this.cursels[j].adjust(el, ec, sl - el + newLines.length - 1, newCurselPositions[3] + right.length - ec);
+            console.log(newLines, ogLines)
+//             this.cursels[j].adjust(el, ec, sl - el + newLines.length - 1, newCurselPositions[3] + right.length - ec);
+            if (this.cursels[j] !== cursel)
+                this.cursels[j].adjust(el, ec, el + newLines.length - ogLines.length, lastChar);
         }
         cursel.relocate(...newCurselPositions);
         cursel.tighten();
@@ -414,47 +409,6 @@ export class StateManager extends HTMLElement {
         this.highlightLines(sl, this.lines.slice(sl, el + 1).join('\n'));
     }
 
-    //                 input2(text) {
-    //                     console.time('input')
-    //                     const curselsToSave = this.cursels.map(c=>c.toArray());
-    //                     const linesToSave = []
-    //                     this.cursels.forEach((c)=>{
-    //                     const [sl,sc,el,ec] = c.orderedPositions();
-    //                     const backup = {
-    //                         lines: this.lines.slice(sl, el + 1),
-    //                     i: sl
-    //                 };
-    //             const head = this.lines[sl].slice(0, sc);
-    //             const tail = this.lines[el].slice(ec);
-    //             const newText = head + text + tail;
-    //             const newLines = newText.split('\n');
-    //             const lastLine = newLines.length - 1;
-    //             const lastChar = newLines[lastLine].length - tail.length;
-    //             if (this.current.categories) {
-    //                 const newCats = newLines.map(l=>new Uint8Array(l.length));
-    //                 newCats[0].set(this.current.categories[sl].slice(0, sc))
-    //                 try {
-    //                     newCats[lastLine].set(this.current.categories[el].slice(ec), lastChar - 1);
-    //                 } catch (e) {}
-    //                 this.highlightLines(sl, newText);
-    //                 this.current.categories.splice(sl, el - sl + 1, ...newCats);
-    //             }
-    //             backup.del = newLines.length;
-    //             this.lines.splice(sl, el - sl + 1, ...newLines);
-    //             c.toCursor(sl + newLines.length - 1, lastChar);
-    //             for (const k of this.cursels) {
-    //                 if (k === c)
-    //                     break;
-    //                 k.adjust(el, ec, sl - el + newLines.length - 1, lastChar - ec);
-    //             }
-    //             linesToSave.push(backup);
-    //         }
-    //         );
-    //         this.current.changed();
-    //         this.current.history.store(curselsToSave, linesToSave);
-    //         console.timeEnd('input')
-    //     }
-
     highlightLines(lineNumber, text) {
         if (this.current.language)
             worker?.postMessage({
@@ -489,14 +443,20 @@ export class StateManager extends HTMLElement {
     }
 
     textFromSelection(cursel) {
-        let text = "";
+        return this.linesFromCursel(cursel).join('\n');
+    }
+
+    linesFromCursel(cursel) {
         const [sl,sc,el,ec] = cursel.orderedPositions();
-        for (let i = sl; i <= el; ++i) {
-            const startChar = i == sl ? sc : 0
-            const endChar = i == el ? ec : this.lines[i].length + 1;
-            text += (this.lines[i] + '\n').slice(startChar, endChar);
+        if (sl == el) {
+            return [this.lines[sl].slice(sc, ec)];
+        } else {
+            const lines = [this.lines[sl].slice(sc)];
+            for (let i = sl + 1; i <= el; ++i) {
+                lines.push(this.lines[i].slice(0, i == el ? ec: null))
+            }
+            return lines;
         }
-        return text;
     }
 
     async addFile(handle) {

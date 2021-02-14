@@ -262,6 +262,9 @@ export const defineActions = (ted)=>{
             ted.render();
         }
         ,
+        test: ()=>{
+            window.open("/test/index.html");
+        },
         nothing: ()=>{}
     }
 }

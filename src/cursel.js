@@ -132,7 +132,7 @@ export class Cursel {
             this.move(way, context);
     }
     
-    adjust(line, char, deltaLine, deltaChar) {
+    adjustLegacy(line, char, deltaLine, deltaChar) {
         if (this.c >= char) {
             this.c += deltaChar * (line == this.l);
             this.tc += deltaChar * (line == this.tl);
@@ -144,16 +144,18 @@ export class Cursel {
         }
     }
 
-    adjust2(oldLine, oldChar, newLine, newChar) {
+    adjust(oldLine, oldChar, newLine, newChar) {
         const [deltaLine, deltaChar] = [newLine - oldLine, newChar - oldChar];
         let [sl, sc, el, ec] = this.orderedPositions();
-        if (sl >= oldLine || (sl == oldLine && sc >= oldChar)) {
+        const [a, b] = [sl, sc];
+        if (sl > oldLine || (sl == oldLine && sc >= oldChar)) {
             sc += deltaChar * (oldLine == sl);
             ec += deltaChar * (oldLine == el);
             sl += deltaLine;
             el += deltaLine;
         }
         this.relocate(sl, sc, el, ec);
+        console.log('moved from', a, b, 'to', sl, sc);
         this.tighten();
 
     }

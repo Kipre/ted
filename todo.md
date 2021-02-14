@@ -14,8 +14,6 @@
 ## Bugs
 
 - fix language leak on tab close
-- fix multiple lines remove line break
-- fix multiple newlines cursors dissapear
 - when highlight request return lines have changed
 - newline always indents to +4
 
