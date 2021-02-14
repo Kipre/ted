@@ -26,8 +26,8 @@ export class Cursel {
 
     static selection(line, char, tailLine, tailChar) {
         const selection = new Cursel(line, char);
-        selection.tl = line;
-        selection.tc = char;
+        selection.tl = tailLine;
+        selection.tc = tailChar;
         return selection;
     }
 
@@ -59,7 +59,7 @@ export class Cursel {
     }
 
     relocate(sl, sc, el, ec) {
-        if (this.l <= this.tl && this.c <= this.tc) {
+        if (before(sl, sc, el, ec)) {
             [this.l, this.c, this.hc, this.tl, this.tc] = [sl, sc, sc, el, ec];
         } else {
             [this.l, this.c, this.hc, this.tl, this.tc] = [el, ec, ec, sl, sc]
@@ -148,13 +148,14 @@ export class Cursel {
         const [deltaLine, deltaChar] = [newLine - oldLine, newChar - oldChar];
         let [sl, sc, el, ec] = this.orderedPositions();
         if (sl >= oldLine || (sl == oldLine && sc >= oldChar)) {
-            sc += deltaChar * (oldLine == sc);
-            ec += deltaChar * (oldLine == ec);
+            sc += deltaChar * (oldLine == sl);
+            ec += deltaChar * (oldLine == el);
             sl += deltaLine;
             el += deltaLine;
         }
         this.relocate(sl, sc, el, ec);
         this.tighten();
+
     }
 
     invert() {
