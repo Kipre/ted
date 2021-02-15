@@ -3,23 +3,17 @@
     <head>
         <meta charset="utf-8">
         <title>ted tests</title>
-        <style>
-        </style>
-        <script type='module'>
-            
-            
+        <script type='module'>    
   import bro from './brotest/brotest.js';
 
   bro.test('stupid test', _=>{
-    bro.expect(4).toBe(5);
+    bro.expect(4).toBe(4);
   });
   
   import './cursel_test.js';
   import './state_test.js';
 
   bro.run();
-
-        
         </script>
     </head>
     <body></body>
