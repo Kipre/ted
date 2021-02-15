@@ -8,8 +8,8 @@
 - make highlight follow the indentation
 - double click on word
 - ctrl-F / ctrl-D
-- curselInsert('', ()=>'', '');
 - backspace tab directly
+- file explorer
 
 ## Bugs
 

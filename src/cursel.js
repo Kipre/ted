@@ -59,10 +59,12 @@ export class Cursel {
     }
 
     relocate(sl, sc, el, ec) {
-        if (before(sl, sc, el, ec)) {
+        if ((sl && !el) || before(sl, sc, el, ec)) {
             [this.l, this.c, this.hc, this.tl, this.tc] = [sl, sc, sc, el, ec];
-        } else {
+        } else if (el) {
             [this.l, this.c, this.hc, this.tl, this.tc] = [el, ec, ec, sl, sc]
+        } else {
+            throw `Cannot relocate with ${{sl, sc, el, ec}}.`
         }
     }
 
@@ -155,7 +157,7 @@ export class Cursel {
             el += deltaLine;
         }
         this.relocate(sl, sc, el, ec);
-        console.log('moved from', a, b, 'to', sl, sc);
+//         console.log('moved from', a, b, 'to', sl, sc);
         this.tighten();
 
     }

@@ -7,7 +7,7 @@ const indentRegex = /(^[ \t]*)\S?/;
 const nothing = /^ *$/;
 const indent = RegExp(`^ {${config.tabSize}}`);
 
-const worker = config.highlight ? new Worker('src/highlight_worker.js') : null;
+const worker = config.highlight ? new Worker('/src/highlight_worker.js') : null;
 
 const extensions = {
     javascript: ['.js'],
@@ -368,7 +368,7 @@ export class StateManager extends HTMLElement {
 
         this.lines.splice(sl, el - sl + 1, ...newLines);
         for (let j = 0; j < this.cursels.length; j++) {
-            console.log(newLines, ogLines)
+//             console.log(newLines, ogLines);
 //             this.cursels[j].adjust(el, ec, sl - el + newLines.length - 1, newCurselPositions[3] + right.length - ec);
             if (this.cursels[j] !== cursel)
                 this.cursels[j].adjust(el, ec, el + newLines.length - ogLines.length, lastChar);

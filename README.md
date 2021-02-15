@@ -1,3 +1,8 @@
+
+<p align="center">
+  <img height="200" src="assets/logo.svg">
+</p>
+
 # ted: text editor
 
 My minimalist web-based [text editor](https://kipre.github.io/ted/).
