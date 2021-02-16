@@ -1,10 +1,10 @@
 import {Cursel} from './cursel.js';
 import {Options} from './options.js';
-import {language_config} from './languages.js';
+import {languageConfig} from './languages.js';
 import {config} from './config.js';
 
 const nothing = /^ *$/;
-const indent = RegExp(`^ {${config.tabSize}}`);
+const indent = RegExp(`^ {${config.tabSize}}`, 'gm');
 
 const left = {
     ['{']: '}',
@@ -54,14 +54,14 @@ export const defineActions = (ted)=>{
         ,
         selectnext: ()=>{}
         ,
-        unindent: ()=>{}
-        ,
         togglecomment: ()=>{
-            let lang;
-            if (lang = ted.state.current.language) {
-                const {slComment, slRegex} = language_config[lang];
-                for (let i = 0; i < ted.state.cursels.length; i++) {
-                    ted.state.toggleComment(ted.state.cursels[i], slComment, slRegex);
+            const lang = ted.state.current.language;
+            if (lang) {
+                const {slComment, slRegex, hasUncommentedLine} = languageConfig[lang];
+                for (const cursel of ted.state.cursels) {
+                    const wide = ted.state.wideCursel(cursel);
+                    const transform = (text)=>hasUncommentedLine.test(text) ? text.replace(/^(?=.*\S)/gm, slComment + " ") : text.replace(slRegex, "");
+                    ted.state.curselInput(wide, '', transform);
                 }
                 ted.render();
             }
@@ -176,18 +176,9 @@ export const defineActions = (ted)=>{
         indent: (e)=>{
             e.preventDefault();
             for (const cursel of ted.state.cursels) {
-                ted.state.lineTransform(cursel, (line,first,last)=>{
-                    if (!nothing.test(line) || cursel.isCursor()) {
-                        if (first)
-                            cursel.update(cursel.l, Math.max(0, cursel.c + config.tabSize));
-                        if (last)
-                            cursel.tc = Math.max(0, cursel.tc + config.tabSize);
-                        return ' '.repeat(config.tabSize) + line;
-                    } else {
-                        return line;
-                    }
-                }
-                );
+                const wide = ted.state.wideCursel(cursel);
+                const transform = (text)=>text.replace(/^(?=.*\S)/gm, ' '.repeat(config.tabSize));
+                ted.state.curselInput(wide, '', transform);
             }
             ted.render();
         }
@@ -195,34 +186,23 @@ export const defineActions = (ted)=>{
         unindent: (e)=>{
             e.preventDefault();
             for (const cursel of ted.state.cursels) {
-                ted.state.lineTransform(cursel, (line,first,last)=>{
-                    if (indent.test(line)) {
-                        if (first)
-                            cursel.update(cursel.l, Math.max(0, cursel.c - config.tabSize));
-                        if (last)
-                            cursel.tc = Math.max(0, cursel.tc - config.tabSize);
-                        return line.replace(indent, '');
-                    } else {
-                        return line;
-                    }
-                }
-                );
+                const wide = ted.state.wideCursel(cursel);
+                const transform = (text)=>text.replace(indent, '');
+                ted.state.curselInput(wide, '', transform);
             }
             ted.render();
         }
         ,
         newline: ()=>{
-            let language, cursel = ted.state.cursels[0];
-            if (ted.state.cursels.length == 1 && (language = ted.state.current.language)) {
-                const {newLineIndent: langSpec} = language_config[language];
+            let language = ted.state.current.language
+              , cursel = ted.state.cursels[0];
+            if (ted.state.cursels.length == 1 && language) {
+                const {newLineIndent: langSpec} = languageConfig[language];
                 const {before, after} = ted.state.cursorContext();
                 if (ted.state.cursels.length == 1 && langSpec.before.test(before) && langSpec.after.test(after)) {
                     const size = Math.min(config.repeatIndentation * ted.state.indentation(cursel.l), cursel.c)
                     const indent = ' '.repeat(size);
-                    ted.state.curselInput(cursel, 
-                                          '\n' + indent + ' '.repeat(config.tabSize), 
-                                          '', 
-                                          langSpec.unindent ? '\n' + indent : '');
+                    ted.state.curselInput(cursel, '\n' + indent + ' '.repeat(config.tabSize), '', langSpec.unindent ? '\n' + indent : '');
                     ted.render();
                     return;
                 }
@@ -264,7 +244,8 @@ export const defineActions = (ted)=>{
         ,
         test: ()=>{
             window.open("/test/index.html");
-        },
+        }
+        ,
         nothing: ()=>{}
     }
 }

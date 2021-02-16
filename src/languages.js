@@ -1,7 +1,11 @@
-export const language_config = {
+export const languageConfig = {
+    default: {
+        identifiers: /[\w_$]/,
+    },
     javascript: {
         slComment: '//',
-        slRegex: /^ *\/\/ ?/,
+        hasUncommentedLine: /(?! *\/\/)^.*\S+.*$/gm,
+        slRegex: /^ *\/\/ ?/gm,
         newLineIndent: {
             before: /{/,
             after: /}/,
@@ -10,7 +14,8 @@ export const language_config = {
     },
     python: {
         slComment: '#',
-        slRegex: /^ *# ?/,
+        hasUncommentedLine: /(?! *#)^.*\S+.*$/gm,
+        slRegex: /^ *# ?/gm,
         newLineIndent: {
             before: /:/,
             after: /.?/

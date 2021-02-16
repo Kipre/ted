@@ -108,24 +108,8 @@ export class StateManager extends HTMLElement {
             passive: true
         });
 
-        worker?.addEventListener('message', e=>{
-            const message = e.data;
-            if (message.type == "everything") {
-                this.current.categories = message.categories;
-                this.tedRender();
-            } else if (message.type == "line") {
-                message.categories.forEach((l,i)=>{
-                    this.current.categories[i + message.line] = l;
-                }
-                );
-                this.tedRender();
-            } else {
-                console.log('unknown message', message);
-            }
-        }
-        );
-
         this.synchronizeWithDB();
+        this.synchronizeWithWorker();
     }
 
     synchronizeWithDB() {
@@ -158,6 +142,25 @@ export class StateManager extends HTMLElement {
                 return true;
             }
         }
+    }
+
+    synchronizeWithWorker() {
+        worker?.addEventListener('message', e=>{
+            const message = e.data;
+            if (message.type == "everything") {
+                this.current.categories = message.categories;
+                this.tedRender();
+            } else if (message.type == "line") {
+                message.categories.forEach((l,i)=>{
+                    this.current.categories[i + message.line] = l;
+                }
+                );
+                this.tedRender();
+            } else {
+                console.log('unknown message', message);
+            }
+        }
+        );
     }
 
     pair(i, start, end) {
@@ -367,46 +370,12 @@ export class StateManager extends HTMLElement {
         }
 
         this.lines.splice(sl, el - sl + 1, ...newLines);
-        for (let j = 0; j < this.cursels.length; j++) {
-//             console.log(newLines, ogLines);
-//             this.cursels[j].adjust(el, ec, sl - el + newLines.length - 1, newCurselPositions[3] + right.length - ec);
+        for (let j = 0; j < this.cursels.length; j++)
             if (this.cursels[j] !== cursel)
                 this.cursels[j].adjust(el, ec, el + newLines.length - ogLines.length, lastChar);
-        }
         cursel.relocate(...newCurselPositions);
         cursel.tighten();
         this.current.changed();
-    }
-
-    toggleComment(cursel, comment, commentRegex) {
-        const len = comment.length + 1;
-        const [sl,sc,el,ec] = cursel.orderedPositions();
-        let commented = true;
-        for (let i = sl; i <= el; i++) {
-            commented *= nothing.test(this.lines[i]) || commentRegex.test(this.lines[i]);
-        }
-        for (let i = sl; i <= el; i++) {
-            if (!nothing.test(this.lines[i])) {
-                if (commented) {
-                    this.lines[i] = this.lines[i].replace(commentRegex, '');
-                } else {
-                    this.lines[i] = comment + ' ' + this.lines[i];
-                }
-                if (i == sl)
-                    cursel.update(cursel.l, Math.max(0, cursel.c + len * (0.5 - commented) * 2));
-                if (i == el)
-                    cursel.tc = Math.max(0, cursel.tc + len * (0.5 - commented) * 2);
-            }
-        }
-        this.highlightLines(sl, this.lines.slice(sl, el + 1).join('\n'));
-    }
-
-    lineTransform(cursel, lineTransformation) {
-        const [sl,sc,el,ec] = cursel.orderedPositions();
-        for (let i = sl; i <= el; i++) {
-            this.lines[i] = lineTransformation(this.lines[i], i == sl, i == el);
-        }
-        this.highlightLines(sl, this.lines.slice(sl, el + 1).join('\n'));
     }
 
     highlightLines(lineNumber, text) {
@@ -446,17 +415,26 @@ export class StateManager extends HTMLElement {
         return this.linesFromCursel(cursel).join('\n');
     }
 
-    linesFromCursel(cursel) {
-        const [sl,sc,el,ec] = cursel.orderedPositions();
+    linesFromCursel(cursel, full=false) {
+        let [sl,sc,el,ec] = cursel.orderedPositions();
+        if (full) {
+            sc = 0;
+            ec = this.lines[el].length;
+        }
         if (sl == el) {
             return [this.lines[sl].slice(sc, ec)];
         } else {
             const lines = [this.lines[sl].slice(sc)];
             for (let i = sl + 1; i <= el; ++i) {
-                lines.push(this.lines[i].slice(0, i == el ? ec: null))
+                lines.push(this.lines[i].slice(0, i == el ? ec: undefined))
             }
             return lines;
         }
+    }
+
+    wideCursel(cursel) {
+        let [sl,sc,el,ec] = cursel.orderedPositions();
+        return Cursel.selection(sl, 0, el, this.lines[el].length);
     }
 
     async addFile(handle) {

@@ -68,17 +68,6 @@ export class Ted extends HTMLElement {
         if (!e.ctrlKey || this.state.cursels.length == 0) {
             this.state.cursels = [this.selection];
         } else {
-            // sorted insert
-//             let inserted = false;
-//             for (const [i,c] of this.state.cursels.entries()) {
-//                 if (before(c.l, c.c, line, char)) {
-//                     this.state.cursels.splice(i, 0, this.selection);
-//                     inserted = true;
-//                     break;
-//                 }
-//             }
-//             if (!inserted)
-//                 this.state.cursels.unshift(this.selection);
             this.state.cursels.push(this.selection);
         }
         this.renderCursels();
@@ -203,11 +192,8 @@ export class Ted extends HTMLElement {
     assignSizes() {
         //         this.state.style.height = `${config.headerHeight}px`;
         this.state.setWidth(this.viewport.width);
-
         this.relativeDiv.style.height = `${this.viewport.height + 20}px`;
-
         this.relativeDiv.querySelectorAll('ted-line')?.forEach(l=>l.remove());
-
         this.lines = [];
         for (let i = 0; i < this.nbLines; i++) {
             const line = new Line(String.fromCodePoint(0));
@@ -304,7 +290,7 @@ export class Ted extends HTMLElement {
     get currentDelta() {
         return this._delta;
     }
-
+    
     assignListeners() {
         window.addEventListener('keydown', e=>this.keyDown(e));
 
