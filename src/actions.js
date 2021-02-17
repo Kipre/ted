@@ -39,7 +39,7 @@ export const defineActions = (ted)=>{
             ted.fuseCursels();
         }
         ,
-        /* cycle the content of selections, ignores cursors */
+        /* cycles the content of selections, ignores cursors */
         transpose: e=>{
             const selections = ted.state.cursels.filter(c=>!c.isCursor());
             let curText, lastText = ted.state.textFromSelection(selections[selections.length - 1]);
@@ -115,7 +115,7 @@ export const defineActions = (ted)=>{
         ,
         letter: e=>{
             if (brackets.includes(e.key)) {
-                ted.state.input(e.key, null, left[e.key]);
+                ted.state.input(e.key, x=>x, left[e.key]);
                 ted.render();
             } else if (leftBrackets.includes(e.key) && ted.state.cursorContext().after === e.key) {
                 ted.state.moveCursels('right');
@@ -167,10 +167,7 @@ export const defineActions = (ted)=>{
             try {
                 const [fileHandle] = await window.showOpenFilePicker();
                 ted.state.addFile(fileHandle);
-            } catch (e) {
-                console.log(e);
-                return;
-            }
+            } catch (e) {}
         }
         ,
         indent: (e)=>{

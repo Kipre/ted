@@ -4,31 +4,18 @@ export const before = (l1,c1,l2,c2)=>{
 
 export class Cursel {
 
-    constructor(line, char) {
+    constructor(line, char, tailLine, tailChar) {
 
         // cursor position
         this.l = line;
         this.c = char;
 
         // tail position
-        this.tl = line;
-        this.tc = char;
+        this.tl = tailLine ?? line;
+        this.tc = tailChar ?? char;
 
         // historic char position
         this.hc = char;
-    }
-
-    static cursor(line, char) {
-        const cursor = new Cursel(line, char);
-        cursor.tighten();
-        return cursor;
-    }
-
-    static selection(line, char, tailLine, tailChar) {
-        const selection = new Cursel(line, char);
-        selection.tl = tailLine;
-        selection.tc = tailChar;
-        return selection;
     }
 
     isCursor() {
@@ -59,12 +46,14 @@ export class Cursel {
     }
 
     relocate(sl, sc, el, ec) {
-        if ((sl && !el) || before(sl, sc, el, ec)) {
+        if (el === undefined) {
+            [this.l, this.c, this.hc, this.tl, this.tc] = [sl, sc, sc, null, null];
+            return;
+        }
+        if (before(sl, sc, el, ec) == before(this.l, this.c, this.tl, this.tc)) {
             [this.l, this.c, this.hc, this.tl, this.tc] = [sl, sc, sc, el, ec];
-        } else if (el) {
-            [this.l, this.c, this.hc, this.tl, this.tc] = [el, ec, ec, sl, sc]
         } else {
-            throw `Cannot relocate with ${{sl, sc, el, ec}}.`
+            [this.l, this.c, this.hc, this.tl, this.tc] = [el, ec, ec, sl, sc]
         }
     }
 
@@ -133,18 +122,6 @@ export class Cursel {
         } else
             this.move(way, context);
     }
-    
-    adjustLegacy(line, char, deltaLine, deltaChar) {
-        if (this.c >= char) {
-            this.c += deltaChar * (line == this.l);
-            this.tc += deltaChar * (line == this.tl);
-        }
-
-        if (Math.min(this.l, this.tl) > line) {
-            this.l += deltaLine;
-            this.tl += deltaLine;
-        }
-    }
 
     adjust(oldLine, oldChar, newLine, newChar) {
         const [deltaLine, deltaChar] = [newLine - oldLine, newChar - oldChar];
@@ -157,9 +134,7 @@ export class Cursel {
             el += deltaLine;
         }
         this.relocate(sl, sc, el, ec);
-//         console.log('moved from', a, b, 'to', sl, sc);
         this.tighten();
-
     }
 
     invert() {

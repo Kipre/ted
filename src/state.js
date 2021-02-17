@@ -336,8 +336,8 @@ export class StateManager extends HTMLElement {
 
     curselInput(cursel, left, mid='', right='') {
         const [sl,sc,el,ec] = cursel.orderedPositions();
-        const ogLines = this.linesFromCursel(cursel);
-        const midLines = mid == '' ? [''] : mid(ogLines.join('\n')).split('\n');
+        const oldLines = this.linesFromCursel(cursel);
+        const midLines = mid == '' ? [''] : mid(oldLines.join('\n')).split('\n');
         const head = this.lines[sl].slice(0, sc) + left;
         const tail = right + this.lines[el].slice(ec);
         const newLines = head.split('\n');
@@ -372,7 +372,7 @@ export class StateManager extends HTMLElement {
         this.lines.splice(sl, el - sl + 1, ...newLines);
         for (let j = 0; j < this.cursels.length; j++)
             if (this.cursels[j] !== cursel)
-                this.cursels[j].adjust(el, ec, el + newLines.length - ogLines.length, lastChar);
+                this.cursels[j].adjust(el, ec, el + newLines.length - oldLines.length, lastChar);
         cursel.relocate(...newCurselPositions);
         cursel.tighten();
         this.current.changed();
@@ -434,7 +434,7 @@ export class StateManager extends HTMLElement {
 
     wideCursel(cursel) {
         let [sl,sc,el,ec] = cursel.orderedPositions();
-        return Cursel.selection(sl, 0, el, this.lines[el].length);
+        return new Cursel(sl, 0, el, this.lines[el].length);
     }
 
     async addFile(handle) {
