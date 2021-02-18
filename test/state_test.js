@@ -1,12 +1,15 @@
 import bro from './brotest/brotest.js';
 
 import {Cursel} from '../src/cursel.js';
-import {StateManager} from '../src/state.js';
+import {State, StateManager} from '../src/state.js';
 
 bro.describe('state manager', ()=>{
-
+    
+    const state = new State('this\nis some\ntext\nsome other lines\nand some encore');
     const self = new StateManager(_=>{},false);
-    self.lines = ['this', 'is some', 'text', 'some other lines', 'and some encore'];
+    self.instances = [state];
+    self._act = 0;
+    self.updateBinding(0);
 
     bro.test('test lines from cursel', _=>{
 
@@ -17,5 +20,13 @@ bro.describe('state manager', ()=>{
         bro.expect(self.linesFromCursel(new Cursel(2, 0, 4, 15))).toEqual(['text', 'some other lines', 'and some encore']);
     }
     );
+   
+   bro.test('test input', ()=>{
+
+       const cursel = new Cursel(1, 4);
+       self.curselInput(cursel, 'r');
+       bro.expect(self.lines).toEqual(['this', 'is srome', 'text', 'some other lines', 'and some encore']);
+       bro.expect(cursel).toMatchObject({l: 1, c:5, tl: null, tc: null});
+   })
 }
 )

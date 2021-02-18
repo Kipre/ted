@@ -229,7 +229,11 @@ export class Ted extends HTMLElement {
     keyDown(e) {
         if (e.defaultPrevented)
             return;
-        this.actions[keyToAction(e)](e);
+        try {
+            this.actions[keyToAction(e)](e);
+        } catch (err) {
+            console.log('unknown action', keyToAction(e))
+        }
     }
 
     async updateLongestLine() {

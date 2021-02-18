@@ -389,8 +389,8 @@ export class StateManager extends HTMLElement {
     }
 
     unredo(way) {
-        let hist;
-        if (hist = this.current.history.undo(way)) {
+        const hist = this.current.history.undo(way)
+        if (hist) {
             this.cursels = hist.cursels.map(a=>Cursel.fromArray(a));
             hist.splices.forEach((s)=>{
                 this.lines.splice(s.i, s.del, ...s.lines);
