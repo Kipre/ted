@@ -13,7 +13,6 @@
 
 ## Bugs
 
-- fix language leak on tab close
 - when highlight request return lines have changed
 - newline always indents to +4
 

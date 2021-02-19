@@ -56,18 +56,9 @@ onmessage = e=>{
 
 function handleMessage(message) {
     if (message.language in models) {
-        if (message.type == "everything") {
-            postMessage({
-                type: 'everything',
+        postMessage({...message,
                 categories: wholeText(message.text, message.language)
             });
-        } else if (message.type == 'line') {
-            postMessage({
-                type: 'line',
-                line: message.line,
-                categories: wholeText(message.text, message.language)
-            })
-        }
     }
 }
 

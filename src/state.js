@@ -35,6 +35,7 @@ export class State {
         this.cursels = [];
         this.position = 0;
         this.hPosition = 0;
+        this.categories = [];
         this.history = new History();
     }
 
@@ -79,6 +80,7 @@ export class State {
         self.language = languageFromName(handle.name);
         self.saved = true;
         self.cursels = [];
+        self.categories = [];
         return self;
     }
 
@@ -87,7 +89,7 @@ export class State {
         self.lines = o.text.split('\n');
         self.handle = o.handle;
         self.saved = o.saved;
-        self.categories = o.categories;
+        self.categories = o.categories ?? [];
         self.cursels = [];
         self.position = o.pos;
         self.hPosition = o.hpos;
@@ -147,17 +149,13 @@ export class StateManager extends HTMLElement {
     synchronizeWithWorker() {
         worker?.addEventListener('message', e=>{
             const message = e.data;
-            if (message.type == "everything") {
-                this.current.categories = message.categories;
-                this.tedRender();
-            } else if (message.type == "line") {
+            console.log(message, message.tab, this.current?.handle);
+            if (message.file == this.current?.handle.name) {
                 message.categories.forEach((l,i)=>{
                     this.current.categories[i + message.line] = l;
                 }
                 );
                 this.tedRender();
-            } else {
-                console.log('unknown message', message);
             }
         }
         );
@@ -276,7 +274,8 @@ export class StateManager extends HTMLElement {
         this.current.language = languageFromName(this.instances[i].handle?.name);
         if (this.current.language && config.highlight)
             worker.postMessage({
-                type: 'everything',
+                file: this.current.handle.name,
+                line: 0,
                 language: this.current.language,
                 text: this.lines.join('\n')
             });
@@ -381,7 +380,7 @@ export class StateManager extends HTMLElement {
     highlightLines(lineNumber, text) {
         if (this.current.language)
             worker?.postMessage({
-                type: 'line',
+                file: this.current.handle.name,
                 line: lineNumber,
                 text: text,
                 language: this.current.language
