@@ -123,5 +123,17 @@ bro.describe('test adjust', _=>{
         });
     }
     );
+
+    bro.test('before and inside', _=>{
+        const a = new Cursel(1, 4, 3, 5);
+        a.adjust(1, 0, 1, 5);
+        a.adjust(3, 2, 3, 5);
+        bro.expect(a).toMatchObject({
+            l: 1,
+            c: 9,
+            tl: 3,
+            tc: 8//7
+        });
+    });
 }
 );

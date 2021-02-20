@@ -15,8 +15,8 @@ export class History {
             this.buffer.shift();
     }
     
-    undo(way) {
-        this.pos = Math.min(0, Math.max(this.pos + way, -this.buffer.length));
-        return this.buffer[this.buffer.length + this.pos];
-    }
+//     undo(way) {
+//         this.pos = Math.min(0, Math.max(this.pos + way, -this.buffer.length));
+//         return this.buffer[this.buffer.length + this.pos];
+//     }
 }

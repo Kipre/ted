@@ -5,6 +5,7 @@ import {config} from './config.js';
 
 const nothing = /^ *$/;
 const indent = RegExp(`^ {${config.tabSize}}`, 'gm');
+const startOfLine = /^(?=.*\S)/gm;
 
 const left = {
     ['{']: '}',
@@ -59,12 +60,16 @@ export const defineActions = (ted)=>{
             if (lang) {
                 const {slComment, slRegex, hasUncommentedLine} = languageConfig[lang];
                 for (const cursel of ted.state.cursels) {
-                    const wide = ted.state.wideCursel(cursel);
-                    const transform = (text)=>hasUncommentedLine.test(text) ? text.replace(/^(?=.*\S)/gm, slComment + " ") : text.replace(slRegex, "");
+                    const {l, tl} = cursel;
+                    const comment = hasUncommentedLine.test(lines.slice(l, tl + 1).join('\n'))
+                    const [regex, filler] = comment ? [startOfLine, slComment + " "] : [slRegex, ""]
+                    for (const vCursel of ted.state.match(regex, l, tl)) {
+                        
                     ted.state.curselInput(wide, '', transform);
+                    }
                 }
                 ted.render();
-            }
+            } else console.log('no language to comment');
         }
         ,
         selectall: ()=>{

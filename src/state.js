@@ -149,7 +149,6 @@ export class StateManager extends HTMLElement {
     synchronizeWithWorker() {
         worker?.addEventListener('message', e=>{
             const message = e.data;
-            console.log(message, message.tab, this.current?.handle);
             if (message.file == this.current?.handle.name) {
                 message.categories.forEach((l,i)=>{
                     this.current.categories[i + message.line] = l;
@@ -377,6 +376,20 @@ export class StateManager extends HTMLElement {
         this.current.changed();
     }
 
+    cheapInput(cursel, content='') {
+        /* cheaper version of the input function */
+        const [sl, sc, el, ec] = cursel.orderedPositions();
+        if (sl !== el || content.includes('\n'))
+            console.error('`cheapInput` works only on single line cursels and inputs')
+        const line = this.lines[sl];
+        this.lines[cursel.l] = line.slice(0, sc) + content + line.slice(ec);
+//         if (this.current.categories)
+//         this.current.categories[sl].splice(sc, ec - sc, ...Array.from('text').fill(0));
+        for (let j = 0; j < this.cursels.length; j++)
+            if (this.cursels[j] !== cursel)
+                this.cursels[j].adjust(sl, ec, sl, sc + content.length);
+    }
+
     highlightLines(lineNumber, text) {
         if (this.current.language)
             worker?.postMessage({
@@ -385,6 +398,32 @@ export class StateManager extends HTMLElement {
                 text: text,
                 language: this.current.language
             })
+    }
+
+    
+
+    highlightLines2(from, to) {
+        if (this.current.language)
+            worker?.postMessage({
+                file: this.current.handle.name,
+                line: from,
+                text: this.lines.slice(from, to).join('\n'),
+                language: this.current.language
+            })
+    }
+
+    match(regex, startLine=0) {
+        const result = [];
+        let match, limit = 0, i=0;
+        while (i < this.lines.length) {
+            const j = i + startLine % this.lines.length
+            while ((match = regex.exec(this.lines[j])) !== null && limit < 50) {
+                result.push(new Cursel(j, match.index, j, match.index + match[0].length));
+                limit++;
+            }
+            i++;
+        }
+        return result;
     }
 
     unredo(way) {
@@ -415,7 +454,7 @@ export class StateManager extends HTMLElement {
     }
 
     linesFromCursel(cursel, full=false) {
-        let [sl,sc,el,ec] = cursel.orderedPositions();
+        let[sl,sc,el,ec] = cursel.orderedPositions();
         if (full) {
             sc = 0;
             ec = this.lines[el].length;
@@ -425,15 +464,15 @@ export class StateManager extends HTMLElement {
         } else {
             const lines = [this.lines[sl].slice(sc)];
             for (let i = sl + 1; i <= el; ++i) {
-                lines.push(this.lines[i].slice(0, i == el ? ec: undefined))
+                lines.push(this.lines[i].slice(0, i == el ? ec : undefined))
             }
             return lines;
         }
     }
 
     wideCursel(cursel) {
-        let [sl,sc,el,ec] = cursel.orderedPositions();
-        return new Cursel(sl, 0, el, this.lines[el].length);
+        let[sl,sc,el,ec] = cursel.orderedPositions();
+        return new Cursel(sl,0,el,this.lines[el].length);
     }
 
     async addFile(handle) {

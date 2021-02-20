@@ -47,13 +47,13 @@ export class Cursel {
 
     relocate(sl, sc, el, ec) {
         if (el === undefined) {
-            [this.l, this.c, this.hc, this.tl, this.tc] = [sl, sc, sc, null, null];
+            [this.l,this.c,this.hc,this.tl,this.tc] = [sl, sc, sc, null, null];
             return;
         }
         if (before(sl, sc, el, ec) == before(this.l, this.c, this.tl, this.tc)) {
-            [this.l, this.c, this.hc, this.tl, this.tc] = [sl, sc, sc, el, ec];
+            [this.l,this.c,this.hc,this.tl,this.tc] = [sl, sc, sc, el, ec];
         } else {
-            [this.l, this.c, this.hc, this.tl, this.tc] = [el, ec, ec, sl, sc]
+            [this.l,this.c,this.hc,this.tl,this.tc] = [el, ec, ec, sl, sc]
         }
     }
 
@@ -124,22 +124,35 @@ export class Cursel {
     }
 
     adjust(oldLine, oldChar, newLine, newChar) {
-        const [deltaLine, deltaChar] = [newLine - oldLine, newChar - oldChar];
-        let [sl, sc, el, ec] = this.orderedPositions();
-        const [a, b] = [sl, sc];
-        if (sl > oldLine || (sl == oldLine && sc >= oldChar)) {
-            sc += deltaChar * (oldLine == sl);
-            ec += deltaChar * (oldLine == el);
-            sl += deltaLine;
-            el += deltaLine;
+        const [deltaLine,deltaChar] = [newLine - oldLine, newChar - oldChar];
+        const pointAdjust = (l,c)=>{
+            if (l > oldLine || (l == oldLine && c >= oldChar)) {
+                c += deltaChar * (oldLine == l);
+                l += deltaLine;
+            }
+            return [l, c];
         }
-        this.relocate(sl, sc, el, ec);
+        let[sl,sc,el,ec] = this.orderedPositions();
+        this.relocate(...pointAdjust(sl, sc), ...pointAdjust(el, ec));
         this.tighten();
     }
 
+//     adjust(oldLine, oldChar, newLine, newChar) {
+//         const [deltaLine,deltaChar] = [newLine - oldLine, newChar - oldChar];
+//         let[sl,sc,el,ec] = this.orderedPositions();
+//         if (sl > oldLine || (sl == oldLine && sc >= oldChar)) {
+//             sc += deltaChar * (oldLine == sl);
+//             ec += deltaChar * (oldLine == el);
+//             sl += deltaLine;
+//             el += deltaLine;
+//         }
+//         this.relocate(sl, sc, el, ec);
+//         this.tighten();
+//     }
+
     invert() {
         if (!this.isCursor()) {
-            [this.l, this.c, this.tl, this.tc] = [this.tl, this.tc, this.l, this.c];
+            [this.l,this.c,this.tl,this.tc] = [this.tl, this.tc, this.l, this.c];
         }
     }
 
@@ -159,8 +172,8 @@ export class Cursel {
         return [this.l, this.c, this.tl, this.tc];
     }
 
-    static fromArray([l, c, tl, tc]) {
-        const res = new Cursel(l, c);
+    static fromArray([l,c,tl,tc]) {
+        const res = new Cursel(l,c);
         if (l == tl && tl == tc) {
             return res.toCursor();
         } else {
