@@ -412,12 +412,13 @@ export class StateManager extends HTMLElement {
             })
     }
 
-    match(regex, startLine=0) {
+    match(regex, startLine, endLine) {
+        const lines = this.lines.slice(startLine, endLine);
         const result = [];
         let match, limit = 0, i=0;
-        while (i < this.lines.length) {
-            const j = i + startLine % this.lines.length
-            while ((match = regex.exec(this.lines[j])) !== null && limit < 50) {
+        while (i < lines.length) {
+            const j = i + startLine % lines.length
+            while ((match = regex.exec(lines[j])) !== null && limit < 50) {
                 result.push(new Cursel(j, match.index, j, match.index + match[0].length));
                 limit++;
             }
