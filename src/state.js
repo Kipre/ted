@@ -378,13 +378,18 @@ export class StateManager extends HTMLElement {
 
     cheapInput(cursel, content='') {
         /* cheaper version of the input function */
-        const [sl, sc, el, ec] = cursel.orderedPositions();
-        if (sl !== el || content.includes('\n'))
-            console.error('`cheapInput` works only on single line cursels and inputs')
+        const [sl,sc,el,ec] = cursel.orderedPositions();
+        console.assert(sl == el && !content.includes('\n'), `'cheapInput' works only on single line cursels and inputs but input was '${content}' and cursel was ${JSON.stringify(cursel)}`);
         const line = this.lines[sl];
-        this.lines[cursel.l] = line.slice(0, sc) + content + line.slice(ec);
-//         if (this.current.categories)
-//         this.current.categories[sl].splice(sc, ec - sc, ...Array.from('text').fill(0));
+        this.lines[sl] = line.slice(0, sc) + content + line.slice(ec);
+        if (this.current.categories) {
+            const newCats = new Uint8Array(this.lines[sl].length);
+            const oldCats = this.current.categories[sl];
+            newCats.set(oldCats.slice(0, sc));
+            newCats.set(Array.from(content).fill(0), sc);
+            newCats.set(oldCats.slice(ec), sc + content.length);
+            this.current.categories[sl] = newCats;
+        }
         for (let j = 0; j < this.cursels.length; j++)
             if (this.cursels[j] !== cursel)
                 this.cursels[j].adjust(sl, ec, sl, sc + content.length);
@@ -400,8 +405,6 @@ export class StateManager extends HTMLElement {
             })
     }
 
-    
-
     highlightLines2(from, to) {
         if (this.current.language)
             worker?.postMessage({
@@ -412,19 +415,40 @@ export class StateManager extends HTMLElement {
             })
     }
 
-    match(regex, startLine, endLine) {
-        const lines = this.lines.slice(startLine, endLine);
-        const result = [];
-        let match, limit = 0, i=0;
-        while (i < lines.length) {
-            const j = i + startLine % lines.length
-            while ((match = regex.exec(lines[j])) !== null && limit < 50) {
-                result.push(new Cursel(j, match.index, j, match.index + match[0].length));
-                limit++;
+    match(regex, sl, sc, el=null) {
+        const run = (line, i) => {
+            while ((match = regex.exec(line)) !== null) {
+                const newCursel = new Cursel(i,match.index,i,match.index + match[0].length);
+                const lastCursel = result[result.length - 1];
+                if (lastCursel && newCursel.l == lastCursel.l && newCursel.c == lastCursel.c)
+                    return;
+                result.push(newCursel);
             }
-            i++;
         }
+        const result = [];
+        let match, j = 1, i = sl;
+        run(this.lines[sl].slice(sc), sl);
+        while (j < this.lines.length - 1 && i != el) {
+            i = (sl + j) % this.lines.length;
+            run(this.lines[i], i);
+            j++;
+        }
+        run(this.lines[sl].slice(0, sc), sl);
         return result;
+    }
+
+    *matcher(regex, sl, sc) {
+        let match, i, j = 1;
+        while ((match = regex.exec(this.lines[sl].slice(sc))) !== null)
+            yield new Cursel(sl,match.index,sl,match.index + match[0].length);
+        while (j < this.lines.length - 1) {
+            i = (sl + j) % this.lines.length;
+            while ((match = regex.exec(this.lines[i])) !== null)
+                yield new Cursel(i,match.index,i,match.index + match[0].length);
+            j++;
+        }
+        while ((match = regex.exec(this.lines[sl].slice(0, sc))) !== null)
+            yield new Cursel(sl,match.index,sl,match.index + match[0].length);
     }
 
     unredo(way) {

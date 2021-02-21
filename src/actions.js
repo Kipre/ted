@@ -60,13 +60,12 @@ export const defineActions = (ted)=>{
             if (lang) {
                 const {slComment, slRegex, hasUncommentedLine} = languageConfig[lang];
                 for (const cursel of ted.state.cursels) {
-                    const {l, tl} = cursel;
-                    const comment = hasUncommentedLine.test(lines.slice(l, tl + 1).join('\n'))
-                    const [regex, filler] = comment ? [startOfLine, slComment + " "] : [slRegex, ""]
-                    for (const vCursel of ted.state.match(regex, l, tl)) {
-                        
-                    ted.state.curselInput(wide, '', transform);
-                    }
+                    const [sl, sc, el, ec] = cursel.orderedPositions();
+                    const comment = hasUncommentedLine.test(ted.state.lines.slice(sl, el + 1).join('\n'))
+                    const [regex, filler] = comment ? [startOfLine, slComment + " "] : [slRegex, ""];
+                    for (const vCursel of ted.state.match(regex, sl, 0, el))
+                        ted.state.cheapInput(vCursel, filler);
+                    ted.state.highlightLines2(sl, el + 1);
                 }
                 ted.render();
             } else console.log('no language to comment');
@@ -178,9 +177,10 @@ export const defineActions = (ted)=>{
         indent: (e)=>{
             e.preventDefault();
             for (const cursel of ted.state.cursels) {
-                const wide = ted.state.wideCursel(cursel);
-                const transform = (text)=>text.replace(/^(?=.*\S)/gm, ' '.repeat(config.tabSize));
-                ted.state.curselInput(wide, '', transform);
+                const [sl, sc, el, ec] = cursel.orderedPositions();
+                for (const vCursel of ted.state.match(/^(?=.*\S)/gm, sl, 0, el))
+                    ted.state.cheapInput(vCursel, ' '.repeat(config.tabSize));
+                ted.state.highlightLines2(sl, el + 1);
             }
             ted.render();
         }
@@ -188,9 +188,10 @@ export const defineActions = (ted)=>{
         unindent: (e)=>{
             e.preventDefault();
             for (const cursel of ted.state.cursels) {
-                const wide = ted.state.wideCursel(cursel);
-                const transform = (text)=>text.replace(indent, '');
-                ted.state.curselInput(wide, '', transform);
+                const [sl, sc, el, ec] = cursel.orderedPositions();
+                for (const vCursel of ted.state.match(indent, sl, 0, el))
+                    ted.state.cheapInput(vCursel);
+                ted.state.highlightLines2(sl, el + 1);
             }
             ted.render();
         }

@@ -132,8 +132,19 @@ bro.describe('test adjust', _=>{
             l: 1,
             c: 9,
             tl: 3,
-            tc: 8//7
+            tc: 8
         });
     });
+
+//     bro.test('inside something that dissapeared', _=>{
+//         const a = new Cursel(1, 4);
+//         a.adjust(1, 6, 1, 0);
+//         bro.expect(a).toMatchObject({
+//             l: 1,
+//             c: 0,
+//             tl: null,
+//             tc: null
+//         })
+//     })
 }
 );

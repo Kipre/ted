@@ -232,7 +232,7 @@ export class Ted extends HTMLElement {
         try {
             this.actions[keyToAction(e)](e);
         } catch (err) {
-            console.log('unknown action', keyToAction(e))
+            console.log('unknown action', keyToAction(e),  err)
         }
     }
 
