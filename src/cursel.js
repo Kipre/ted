@@ -137,19 +137,6 @@ export class Cursel {
         this.tighten();
     }
 
-//     adjust(oldLine, oldChar, newLine, newChar) {
-//         const [deltaLine,deltaChar] = [newLine - oldLine, newChar - oldChar];
-//         let[sl,sc,el,ec] = this.orderedPositions();
-//         if (sl > oldLine || (sl == oldLine && sc >= oldChar)) {
-//             sc += deltaChar * (oldLine == sl);
-//             ec += deltaChar * (oldLine == el);
-//             sl += deltaLine;
-//             el += deltaLine;
-//         }
-//         this.relocate(sl, sc, el, ec);
-//         this.tighten();
-//     }
-
     invert() {
         if (!this.isCursor()) {
             [this.l,this.c,this.tl,this.tc] = [this.tl, this.tc, this.l, this.c];

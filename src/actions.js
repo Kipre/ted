@@ -38,6 +38,10 @@ export const defineActions = (ted)=>{
             }
             ted.render();
             ted.fuseCursels();
+        },
+        kaction: e=>{
+            e.preventDefault();
+            console.log(e);
         }
         ,
         /* cycles the content of selections, ignores cursors */
@@ -53,7 +57,17 @@ export const defineActions = (ted)=>{
             ted.fuseCursels();
         }
         ,
-        selectnext: ()=>{}
+        selectnext: e=>{
+            e.preventDefault();
+            const cursel = ted.state.cursels[ted.state.cursels.length - 1];
+            const [sl, sc, el, ec] = cursel.orderedPositions();
+            if (cursel.isCursor()) return;
+            const text = ted.state.textFromSelection(cursel);
+            const next = ted.state.match(new RegExp(text, 'gm'), el, ec)[0];
+            if (next)
+                ted.state.cursels.push(next);
+            ted.fuseCursels();
+        }
         ,
         togglecomment: ()=>{
             const lang = ted.state.current.language;

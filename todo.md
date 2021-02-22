@@ -5,9 +5,7 @@
 - implement history !!
 - implement block selection rendering
 - tab handling ~
-- make highlight follow the indentation
 - double click on word
-- ctrl-F / ctrl-D
 - backspace tab directly
 - file explorer
 

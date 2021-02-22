@@ -363,7 +363,7 @@ export class StateManager extends HTMLElement {
                 /* fill tail categories */
                 newCats[newLines.length - 1].set(this.current.categories[el].slice(ec), lastChar);
             } catch (e) {}
-            this.highlightLines(sl, head + midLines.join('\n') + tail);
+            this.highlightText(sl, head + midLines.join('\n') + tail);
             this.current.categories.splice(sl, el - sl + 1, ...newCats);
         }
 
@@ -380,8 +380,7 @@ export class StateManager extends HTMLElement {
         /* cheaper version of the input function */
         const [sl,sc,el,ec] = cursel.orderedPositions();
         console.assert(sl == el && !content.includes('\n'), `'cheapInput' works only on single line cursels and inputs but input was '${content}' and cursel was ${JSON.stringify(cursel)}`);
-        const line = this.lines[sl];
-        this.lines[sl] = line.slice(0, sc) + content + line.slice(ec);
+        this.lines[sl] = this.lines[sl].slice(0, sc) + content + this.lines[sl].slice(ec);
         if (this.current.categories) {
             const newCats = new Uint8Array(this.lines[sl].length);
             const oldCats = this.current.categories[sl];
@@ -395,7 +394,7 @@ export class StateManager extends HTMLElement {
                 this.cursels[j].adjust(sl, ec, sl, sc + content.length);
     }
 
-    highlightLines(lineNumber, text) {
+    highlightText(lineNumber, text) {
         if (this.current.language)
             worker?.postMessage({
                 file: this.current.handle.name,

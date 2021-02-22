@@ -25,12 +25,16 @@ export function keyToAction(e) {
             return 'paste';
         case('x'):
             return 'cut';
+        case('d'):
+            return 'selectnext';
         case('a'):
             return 'selectall';
         case('o'):
             return 'open';
         case('s'):
             return 'save';
+        case('k'):
+            return 'kaction';
         case('z'):
             return 'undo';
         case(':'):
