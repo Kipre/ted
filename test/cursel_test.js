@@ -1,5 +1,5 @@
 import bro from './brotest/brotest.js';
-import {Cursel} from '../src/cursel.js';
+import {before, Cursel} from '../src/cursel.js';
 
 bro.describe('test relocate', _=>{
     bro.test('simple case', _=>{
@@ -148,3 +148,16 @@ bro.describe('test adjust', _=>{
 //     })
 }
 );
+
+bro.test('before', _=>{
+   bro.expect(before(1, 1, 1, 2)).toBe(true); 
+   bro.expect(before(1, 1, 1, 5)).toBe(true); 
+   bro.expect(before(1, 1, 2, 2)).toBe(true); 
+   bro.expect(before(1, 1, 2, 0)).toBe(true); 
+   bro.expect(before(0, 0, 2, 0)).toBe(true); 
+   bro.expect(before(1, 1, 1, 1)).toBe(false); 
+   bro.expect(before(1, 1, 0, 2)).toBe(false); 
+   bro.expect(before(1, 1, 1, 0)).toBe(false); 
+   bro.expect(before(5, 1, 3, 2)).toBe(false); 
+   bro.expect(before(1, 8, 0, 0)).toBe(false); 
+});

@@ -7,7 +7,7 @@ const indentRegex = /(^[ \t]*)\S?/;
 const nothing = /^ *$/;
 const indent = RegExp(`^ {${config.tabSize}}`);
 
-const worker = config.highlight ? new Worker('/src/highlight_worker.js') : null;
+const worker = config.highlight ? new Worker('./src/highlight_worker.js') : null;
 
 const extensions = {
     javascript: ['.js'],

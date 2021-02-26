@@ -26,6 +26,7 @@ const self = new StateManager(_=>{},false);
        self.curselInput(cursel, 'r');
        bro.expect(self.lines).toEqual(['this', 'is srome', 'text', 'some other lines', 'and some encore']);
        bro.expect(cursel).toMatchObject({l: 1, c:5, tl: null, tc: null});
+       bro.expect(self.cursels).toHaveLength(0);
    });
 
    bro.test('cheap input', _=>{
