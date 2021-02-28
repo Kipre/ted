@@ -3,7 +3,6 @@
 ## Features to implement
 
 - implement history !!
-- implement block selection rendering
 - tab handling ~
 - double click on word
 - backspace tab directly

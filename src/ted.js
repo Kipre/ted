@@ -1,4 +1,4 @@
-import {Cursel, before, drawCursel} from './cursel.js';
+import {Cursel, before} from './cursel.js';
 import {Line} from './line.js';
 import {Options} from './options.js';
 import {Scrollbar} from './scrollbar.js';
@@ -62,9 +62,7 @@ export class Ted extends HTMLElement {
         if (e.defaultPrevented)
             return;
         const [line,char] = this.mousePosition(...this.mouseCoordinates(e));
-
         this.selection = new Cursel(line,char);
-
         if (!e.ctrlKey || this.state.cursels.length == 0) {
             this.state.cursels = [this.selection];
         } else {
@@ -93,7 +91,37 @@ export class Ted extends HTMLElement {
     renderCursels() {
         this.relativeDiv.querySelectorAll('.cursor').forEach(e=>e.remove());
         this.relativeDiv.querySelectorAll('.selection').forEach(e=>e.remove());
-        this.state.cursels.forEach(c=>drawCursel(this, c));
+        this.state.cursels.forEach(c=>this.drawCursel(c));
+    }
+
+    drawCursor(cursel) {
+        const cursor = document.createElement('div');
+        cursor.classList.add('cursor');
+        cursor.style.top = `${(cursel.l - ted.currentLine) * ted.charHeight}px`;
+        cursor.style.left = `${1 + (cursel.c - ted.currentChar) * ted.charWidth}px`;
+        this.relativeDiv.appendChild(cursor);
+    }
+
+    selectionArea(start, end, line) {
+        const area = document.createElement('div');
+        area.classList.add('selection');
+        area.style.width = `${(end - start) * this.charWidth}px`;
+        area.style.height = `${this.charHeight}px`;
+        area.style.top = `${(line - this.currentLine) * this.charHeight}px`;
+        area.style.left = `${1 + start * this.charWidth}px`;
+        this.relativeDiv.appendChild(area);
+    }
+
+    drawCursel(cursel) {
+        if (ted.visible(cursel.l, cursel.c)) this.drawCursor(cursel);
+        const [sl,sc,el,ec] = cursel.orderedPositions();
+        for (let i = sl; i <= el; ++i) {
+            if (ted.visible(i)) {
+                const start = i == sl ? Math.max(sc - ted.currentChar, 0) : 0;
+                const end = i == el ? ec - ted.currentChar : ted.nbChars;
+                this.selectionArea(start, end, i);
+            }
+        }
     }
 
     input(text) {
@@ -304,7 +332,6 @@ export class Ted extends HTMLElement {
             this.selection?.tighten();
             this.selection = null;
             this.fuseCursels();
-//             console.log(this.state.cursels);
         }
         );
 

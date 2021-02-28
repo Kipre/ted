@@ -190,28 +190,3 @@ export class Cursel {
         return false;
     }
 }
-
-export function drawCursel(ted, cursel) {
-    if (ted.visible(cursel.l, cursel.c)) {
-        const cursor = document.createElement('div');
-        cursor.classList.add('cursor');
-        cursor.style.top = `${(cursel.l - ted.currentLine) * ted.charHeight}px`;
-        cursor.style.left = `${1 + (cursel.c - ted.currentChar) * ted.charWidth}px`;
-        ted.relativeDiv.appendChild(cursor);
-    }
-    const [sl,sc,el,ec] = cursel.orderedPositions();
-    for (let i = sl; i <= el; ++i) {
-        if (ted.visible(i)) {
-            const start = i == sl ? Math.max(sc - ted.currentChar, 0) : 0;
-            const end = i == el ? ec - ted.currentChar : ted.nbChars;
-
-            const subSelection = document.createElement('div');
-            subSelection.classList.add('selection');
-            subSelection.style.width = `${(end - start) * ted.charWidth}px`;
-            subSelection.style.height = `${ted.charHeight}px`;
-            subSelection.style.top = `${(i - ted.currentLine) * ted.charHeight}px`;
-            subSelection.style.left = `${1 + start * ted.charWidth}px`;
-            ted.relativeDiv.appendChild(subSelection);
-        }
-    }
-}
