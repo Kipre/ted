@@ -10,6 +10,7 @@ export const config = {
     tabSize: 4,
     repeatIndentation: true,
     historySize: 20,
+    historyMaxLength: 100_000,
     highlight: true,
-    highlightMaxChars: 10000,
+    highlightMaxChars: 10_000,
 }
