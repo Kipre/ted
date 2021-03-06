@@ -451,13 +451,10 @@ export class StateManager extends HTMLElement {
     }
 
     unredo(way) {
-        const hist = this.current.history.undo(way)
+        const hist = this.current.history.unredo(way)
         if (hist) {
             this.cursels = hist.cursels.map(a=>Cursel.fromArray(a));
-            hist.splices.forEach((s)=>{
-                this.lines.splice(s.i, s.del, ...s.lines);
-            }
-            );
+            this.lines = hist.text.split('\n');
             this.tedRender();
         }
     }
@@ -545,6 +542,10 @@ export class StateManager extends HTMLElement {
         for await(const entry of dirHandle.values()) {
             console.log(entry.kind, entry.name);
         }
+    }
+
+    snapshot() {
+        this.current.history.snapshot(this.cursels, this.lines);
     }
 }
 

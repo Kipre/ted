@@ -23,6 +23,7 @@ export const defineActions = (ted)=>{
     return {
         backspace: e=>{
             e.preventDefault();
+            ted.state.snapshot();
             for (const cursel of ted.state.cursels) {
                 if (cursel.isCursor()) {
                     cursel.toSelection();
@@ -132,6 +133,7 @@ export const defineActions = (ted)=>{
         }
         ,
         letter: e=>{
+            ted.state.snapshot();
             if (brackets.includes(e.key)) {
                 ted.state.input(e.key, x=>x, left[e.key]);
                 ted.render();

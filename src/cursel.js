@@ -160,14 +160,8 @@ export class Cursel {
     }
 
     static fromArray([l,c,tl,tc]) {
-        const res = new Cursel(l,c);
-        if (l == tl && tl == tc) {
-            return res.toCursor();
-        } else {
-            res.tl = tl;
-            res.tc = tc;
-            return res;
-        }
+        const res = new Cursel(l,c,tl,tc);
+        return res.tighten();
     }
 
     fuse(other) {
