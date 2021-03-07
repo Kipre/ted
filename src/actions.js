@@ -47,6 +47,7 @@ export const defineActions = (ted)=>{
         ,
         /* cycles the content of selections, ignores cursors */
         transpose: e=>{
+            ted.state.snapshot();
             const selections = ted.state.cursels.filter(c=>!c.isCursor());
             let curText, lastText = ted.state.textFromSelection(selections[selections.length - 1]);
             for (const selection of selections) {
@@ -70,7 +71,14 @@ export const defineActions = (ted)=>{
             ted.fuseCursels();
         }
         ,
+        droplastcursel: e=>{
+            e.preventDefault();
+            ted.state.cursels.pop();
+            ted.renderCursels();
+        }
+        ,
         togglecomment: ()=>{
+            ted.state.snapshot();
             const lang = ted.state.current.language;
             if (lang) {
                 const {slComment, slRegex, hasUncommentedLine} = languageConfig[lang];
@@ -156,6 +164,7 @@ export const defineActions = (ted)=>{
         }
         ,
         delete: e=>{
+            ted.state.snapshot();
             for (const cursel of ted.state.cursels) {
                 if (cursel.isCursor()) {
                     cursel.toSelection();
@@ -173,6 +182,7 @@ export const defineActions = (ted)=>{
         }
         ,
         paste: ()=>{
+            ted.state.snapshot();
             navigator.clipboard.readText().then(clipText=>{
                 // weird space at the end of pasted lines
                 clipText = clipText.replace(/\s\n/g, '\n');
@@ -192,6 +202,7 @@ export const defineActions = (ted)=>{
         ,
         indent: (e)=>{
             e.preventDefault();
+            ted.state.snapshot();
             for (const cursel of ted.state.cursels) {
                 const [sl, sc, el, ec] = cursel.orderedPositions();
                 for (const vCursel of ted.state.match(/^(?=.*\S)/gm, sl, 0, el))
@@ -213,6 +224,7 @@ export const defineActions = (ted)=>{
         }
         ,
         newline: ()=>{
+            ted.state.snapshot();
             let language = ted.state.current.language
               , cursel = ted.state.cursels[0];
             if (ted.state.cursels.length == 1 && language) {
@@ -249,6 +261,7 @@ export const defineActions = (ted)=>{
         }
         ,
         cut: e=>{
+            ted.state.snapshot()
             const cursel = ted.state.cursels[0];
             if (cursel?.isCursor()) {
                 navigator.clipboard.writeText('\n' + ted.state.lines[cursel.l]);

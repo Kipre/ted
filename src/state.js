@@ -381,7 +381,7 @@ export class StateManager extends HTMLElement {
         const [sl,sc,el,ec] = cursel.orderedPositions();
         console.assert(sl == el && !content.includes('\n'), `'cheapInput' works only on single line cursels and inputs but input was '${content}' and cursel was ${JSON.stringify(cursel)}`);
         this.lines[sl] = this.lines[sl].slice(0, sc) + content + this.lines[sl].slice(ec);
-        if (this.current.categories) {
+        if (this.current.language) {
             const newCats = new Uint8Array(this.lines[sl].length);
             const oldCats = this.current.categories[sl];
             newCats.set(oldCats.slice(0, sc));

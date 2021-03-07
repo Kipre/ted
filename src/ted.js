@@ -113,7 +113,8 @@ export class Ted extends HTMLElement {
     }
 
     drawCursel(cursel) {
-        if (ted.visible(cursel.l, cursel.c)) this.drawCursor(cursel);
+        if (ted.visible(cursel.l, cursel.c))
+            this.drawCursor(cursel);
         const [sl,sc,el,ec] = cursel.orderedPositions();
         for (let i = sl; i <= el; ++i) {
             if (ted.visible(i)) {
@@ -158,7 +159,7 @@ export class Ted extends HTMLElement {
     }
 
     render() {
-//                 console.time('render');
+        //                 console.time('render');
         this.refocus();
         this.relativeDiv.style.top = `-${this.currentDelta}px`;
         this.populateLines();
@@ -166,7 +167,7 @@ export class Ted extends HTMLElement {
         this.renderCursels();
         this.updateLongestLine();
 
-//                 console.timeEnd('render');
+        //                 console.timeEnd('render');
     }
 
     populateLines() {
@@ -260,7 +261,11 @@ export class Ted extends HTMLElement {
         try {
             this.actions[keyToAction(e)](e);
         } catch (err) {
-            console.log('unknown action', keyToAction(e),  err)
+            if (err.stack.includes('keyToAction')) {
+                console.log('unknown action', `"${keyToAction(e)}"`);
+            } else {
+                console.error(err);
+            }
         }
     }
 
@@ -322,7 +327,7 @@ export class Ted extends HTMLElement {
     get currentDelta() {
         return this._delta;
     }
-    
+
     assignListeners() {
         window.addEventListener('keydown', e=>this.keyDown(e));
 

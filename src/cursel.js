@@ -161,7 +161,8 @@ export class Cursel {
 
     static fromArray([l,c,tl,tc]) {
         const res = new Cursel(l,c,tl,tc);
-        return res.tighten();
+        res.tighten()
+        return res;
     }
 
     fuse(other) {

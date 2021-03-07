@@ -14,11 +14,12 @@ export class History {
             this.buffer.push({cursels: cursels.map(c => c.toArray()), text});
         if (this.buffer.length > config.historySize)
             this.buffer.shift();
-        console.log(this.pos)
+        console.log(this.pos, this.buffer);
     }
     
     unredo(way) {
         this.pos = Math.min(0, Math.max(this.pos + way, -this.buffer.length));
+        console.log(this.pos, this.buffer);
         return this.buffer[this.buffer.length + this.pos];
     }
 }

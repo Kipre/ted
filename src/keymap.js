@@ -9,8 +9,10 @@ export function keyToAction(e) {
             return 'redo';
         case('S'):
             return 'saveas';
-        case('T'):
-            return 'test';
+        case('L'):
+            return 'notexistent';
+        case('D'):
+            return 'droplastcursel';
         }
     } else if (e.shiftKey && e.altKey) {
         switch(e.key) {
