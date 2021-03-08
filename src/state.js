@@ -85,8 +85,7 @@ export class State {
     }
 
     static fromObject(o) {
-        const self = new State();
-        self.lines = o.text.split('\n');
+        const self = new State(o.text);
         self.handle = o.handle;
         self.saved = o.saved;
         self.categories = o.categories ?? [];
@@ -105,6 +104,7 @@ export class StateManager extends HTMLElement {
         this.barPosition = 0;
         this.lines = [''];
         this.cursels = [];
+        this.instances = [];
 
         this.addEventListener('wheel', e=>this.scroll(e), {
             passive: true
