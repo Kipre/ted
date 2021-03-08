@@ -98,13 +98,12 @@ export class State {
 }
 
 export class StateManager extends HTMLElement {
-    constructor(tedRender, useIndexedDB=true) {
+    constructor(tedRender, text='', useIndexedDB=true) {
         super();
         this.tedRender = tedRender;
         this.barPosition = 0;
-        this.lines = [''];
+        this.lines = [text.split('\n')];
         this.cursels = [];
-        this.instances = [];
 
         this.addEventListener('wheel', e=>this.scroll(e), {
             passive: true
