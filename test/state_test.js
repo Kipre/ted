@@ -6,7 +6,7 @@ import {State, StateManager} from '../src/state.js';
 bro.describe('state manager', ()=>{
 
 const state = new State('this\nis some\ntext\nsome other lines\nand some encore');
-const self = new StateManager(_=>{},false);
+const self = new StateManager(_=>{}, '', false);
     self.instances = [state];
     self._act = 0;
     self.updateBinding(0);

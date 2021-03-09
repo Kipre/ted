@@ -102,7 +102,7 @@ export class StateManager extends HTMLElement {
         super();
         this.tedRender = tedRender;
         this.barPosition = 0;
-        this.lines = [text.split('\n')];
+        this.lines = text.split('\n');
         this.cursels = [];
 
         this.addEventListener('wheel', e=>this.scroll(e), {
