@@ -1,23 +1,23 @@
 self.addEventListener('install', function(event) {
     event.waitUntil(caches.open('v1').then(function(cache) {
-        return cache.addAll(['/index.html',
-                             '/src/main.js',
-                             '/src/actions.js',
-                             '/src/config.js',
-                             '/src/cursel.js',
-                             '/src/highlight_worker.js',
-                             '/src/history.js',
-                             '/src/keymap.js',
-                             '/src/languages.js',
-                             '/src/line.js',
-                             '/src/options.js',
-                             '/src/scrollbar.js',
-                             '/src/state.js',
-                             '/src/ted.js',
-                             '/style.css',
-                             '/manifest.json',
-                             '/favicon.ico',
-                             '/assets/tedlogo.png']);
+        return cache.addAll(['/ted/index.html',
+                             '/ted/src/main.js',
+                             '/ted/src/actions.js',
+                             '/ted/src/config.js',
+                             '/ted/src/cursel.js',
+                             '/ted/src/highlight_worker.js',
+                             '/ted/src/history.js',
+                             '/ted/src/keymap.js',
+                             '/ted/src/languages.js',
+                             '/ted/src/line.js',
+                             '/ted/src/options.js',
+                             '/ted/src/scrollbar.js',
+                             '/ted/src/state.js',
+                             '/ted/src/ted.js',
+                             '/ted/style.css',
+                             '/ted/manifest.json',
+                             '/ted/favicon.ico',
+                             '/ted/assets/tedlogo.png']);
     }));
 });
 
