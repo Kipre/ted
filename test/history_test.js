@@ -21,6 +21,8 @@ bro.describe('test history', _=>{
         his.snapshot([], ['some', 'text here and']);
         bro.expect(his.unredo(-1)).toEqual({cursels: [], text: 'some\ntext here and'});
         bro.expect(his.unredo(-1)).toEqual({cursels: [[1, 3, 1, 3]], text: 'some\ntext here'});
+        bro.expect(his.unredo(1)).toEqual({cursels: [], text: 'some\ntext here and'});
+        bro.expect(his.unredo(1)).toEqual({cursels: [], text: 'some\ntext here and'});
     }
     );
 }
