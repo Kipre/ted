@@ -204,10 +204,14 @@ export const defineActions = (ted)=>{
             e.preventDefault();
             ted.state.snapshot();
             for (const cursel of ted.state.cursels) {
-                const [sl, sc, el, ec] = cursel.orderedPositions();
-                for (const vCursel of ted.state.match(/^(?=.*\S)/gm, sl, 0, el))
-                    ted.state.cheapInput(vCursel, ' '.repeat(config.tabSize));
-                ted.state.highlightLines2(sl, el + 1);
+                if (cursel.isCursor()) {
+                    ted.state.cheapInput(new Cursel(cursel.l, 0), ' '.repeat(config.tabSize));
+                } else {
+                    const [sl, sc, el, ec] = cursel.orderedPositions();
+                    for (const vCursel of ted.state.match(/^(?=.*\S)/gm, sl, 0, el))
+                        ted.state.cheapInput(vCursel, ' '.repeat(config.tabSize));
+                    ted.state.highlightLines2(sl, el + 1);
+                }
             }
             ted.render();
         }
