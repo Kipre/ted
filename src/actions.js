@@ -29,6 +29,11 @@ export const defineActions = (ted)=>{
                     cursel.toSelection();
                     const {before, after} = ted.state.cursorContext();
                     const context = ted.state.lineContext(cursel.l)
+                    const nbSpaces = ted.state.indentation(cursel.l);
+                    if (nbSpaces && (nbSpaces % config.tabSize === 0) && (nbSpaces / config.tabSize) === (cursel.c / config.tabSize)) {
+                        for (let k = 0; k < config.tabSize - 1; k++)
+                            cursel.move('left', context);
+                    }
                     if (brackets.includes(before) && after == left[before]) {
                         cursel.move('right', context);
                         cursel.invert();
@@ -39,7 +44,8 @@ export const defineActions = (ted)=>{
             }
             ted.render();
             ted.fuseCursels();
-        },
+        }
+        ,
         kaction: e=>{
             e.preventDefault();
             console.log(e);
@@ -62,10 +68,11 @@ export const defineActions = (ted)=>{
         selectnext: e=>{
             e.preventDefault();
             const cursel = ted.state.cursels[ted.state.cursels.length - 1];
-            const [sl, sc, el, ec] = cursel.orderedPositions();
-            if (cursel.isCursor()) return;
+            const [sl,sc,el,ec] = cursel.orderedPositions();
+            if (cursel.isCursor())
+                return;
             const text = ted.state.textFromSelection(cursel);
-            const next = ted.state.match(new RegExp(text, 'gm'), el, ec)[0];
+            const next = ted.state.match(new RegExp(text,'gm'), el, ec)[0];
             if (next)
                 ted.state.cursels.push(next);
             ted.fuseCursels();
@@ -83,15 +90,16 @@ export const defineActions = (ted)=>{
             if (lang) {
                 const {slComment, slRegex, hasUncommentedLine} = languageConfig[lang];
                 for (const cursel of ted.state.cursels) {
-                    const [sl, sc, el, ec] = cursel.orderedPositions();
+                    const [sl,sc,el,ec] = cursel.orderedPositions();
                     const comment = hasUncommentedLine.test(ted.state.lines.slice(sl, el + 1).join('\n'))
-                    const [regex, filler] = comment ? [startOfLine, slComment + " "] : [slRegex, ""];
+                    const [regex,filler] = comment ? [startOfLine, slComment + " "] : [slRegex, ""];
                     for (const vCursel of ted.state.match(regex, sl, 0, el))
                         ted.state.cheapInput(vCursel, filler);
                     ted.state.highlightLines2(sl, el + 1);
                 }
                 ted.render();
-            } else console.log('no language to comment');
+            } else
+                console.log('no language to comment');
         }
         ,
         selectall: ()=>{
@@ -205,9 +213,9 @@ export const defineActions = (ted)=>{
             ted.state.snapshot();
             for (const cursel of ted.state.cursels) {
                 if (cursel.isCursor()) {
-                    ted.state.cheapInput(new Cursel(cursel.l, 0), ' '.repeat(config.tabSize));
+                    ted.state.cheapInput(new Cursel(cursel.l,0), ' '.repeat(config.tabSize));
                 } else {
-                    const [sl, sc, el, ec] = cursel.orderedPositions();
+                    const [sl,sc,el,ec] = cursel.orderedPositions();
                     for (const vCursel of ted.state.match(/^(?=.*\S)/gm, sl, 0, el))
                         ted.state.cheapInput(vCursel, ' '.repeat(config.tabSize));
                     ted.state.highlightLines2(sl, el + 1);
@@ -219,7 +227,7 @@ export const defineActions = (ted)=>{
         unindent: (e)=>{
             e.preventDefault();
             for (const cursel of ted.state.cursels) {
-                const [sl, sc, el, ec] = cursel.orderedPositions();
+                const [sl,sc,el,ec] = cursel.orderedPositions();
                 for (const vCursel of ted.state.match(indent, sl, 0, el))
                     ted.state.cheapInput(vCursel);
                 ted.state.highlightLines2(sl, el + 1);
