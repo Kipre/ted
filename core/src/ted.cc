@@ -7,18 +7,19 @@
 #include <unistd.h>
 #include <termios.h>
 
-#define KEY_UP 'z'
-#define KEY_DOWN 's'
-#define KEY_RIGHT 'd'
-#define KEY_LEFT 'q'
+#define UP 'A'
+#define DOWN 'B'
+#define RIGHT 'C'
+#define LEFT 'D'
+
+constexpr size_t buffer_size = 1024;
 
 const std::string DELIMITER = "\n";
-enum move { UP, DOWN, RIGHT, LEFT };
 
-char getch() {
-    char buf = 0;
-    read(0, &buf, 1);
-    return buf;
+char buffer[buffer_size] = {0};
+
+int getch() {
+    return read(0, &buffer, buffer_size);
 }
 
 class cursel {
@@ -86,7 +87,7 @@ public:
     void render_cursels() {
         for (auto cur : cursels) {
             std::cout << "\e[" << cur.l + 1 << ";" << cur.c + gap + 3 << "H";
-            std::cout << "\e[48;5;17m\e[83;5;16m" << lines[cur.l][cur.c] << "\e[0m";
+            std::cout << "\e[48;5;214m\e[38;5;16m" << lines[cur.l][cur.c] << "\e[0m";
         }
         std::cout.flush();
     }
@@ -97,7 +98,7 @@ public:
 
 
 
-    void move_cursels(move way) {
+    void move_cursels(char way) {
         for (auto &cur : cursels)
             switch(way) {
             case UP:
@@ -112,8 +113,8 @@ public:
             case RIGHT:
                 if (cur.c < lines[cur.l].size()) cur.c++;
                 break;
-            // default:
-            //     break;
+            default:
+                write_message(std::string("unknown way to move ") + way);
             }
     }
 
@@ -123,8 +124,8 @@ public:
         // print lines
         for (size_t i=0; i < (size_t) nrows - 1; i++) {
             if (i < lines.size()) {
-                line_nb(std::to_string(i));
-                std::cout << lines[i] << '\n';
+                line_nb(std::to_string(i + 1));
+                std::cout << lines[i] << " \n";
             } else {
                 line_nb(std::string());
                 std::cout << '\n';
@@ -133,20 +134,41 @@ public:
         render_cursels();
     }
 
-    void handle_input(char character) {
-        switch(character) {
-            case KEY_UP:
-                move_cursels(UP);
-                break;
-            case KEY_DOWN:
-                move_cursels(DOWN);
-                break;
-            case KEY_LEFT:
-                move_cursels(LEFT);
-                break;
-            case KEY_RIGHT:
-                move_cursels(RIGHT);
-                break;
+    void input(int length) {
+    	for (auto & cur : cursels) {
+		    lines[cur.l].insert(cur.c, buffer, length);
+		    cur.c += length;
+    	}
+    }
+
+    void write_message(const std::string & msg) {
+        std::cout << "\e[" << nrows << ";0H\e[0K";
+        std::cout << msg;
+    }
+
+    void handle_input(int read_size) {
+    	if (buffer[0] == '\e') {
+    		if (read_size == 3 && buffer[1] == '[') {
+    			move_cursels(buffer[2]);
+    		}
+    	} else if (buffer[0] == '\b') {
+
+    	} else {
+    		input(read_size);
+    	}
+        // switch(read_size) {
+        //     case KEY_UP:
+        //         move_cursels(UP);
+        //         break;
+        //     case KEY_DOWN:
+        //         move_cursels(DOWN);
+        //         break;
+        //     case KEY_LEFT:
+        //         move_cursels(LEFT);
+        //         break;
+        //     case KEY_RIGHT:
+        //         move_cursels(RIGHT);
+        //         break;
             // case KEY_BACKSPACE:
             // case 127:
             // case '\b':
@@ -156,10 +178,19 @@ public:
             //     lines[cursor[0]].erase(cursor[1], 1);
             //     break;
             // default:
-                // lines[cursor[0]].insert(cursor[1], 1, (char) character);
-                // cursor[1]++;
-        }
-        std::cout << "\e[" << nrows << ";0H" << character;
+        // }
+        std::cout << "\e[" << nrows << ";0H\e[0K";
+        for (int i=0; i < read_size; i++)
+        	switch(buffer[i]) {
+        		case '\e':
+        			std::cout << "ESC";
+        			break;
+        		case '\b':
+        			std::cout << "ESC";
+        			break;
+        		default:
+        			std::cout << buffer[i];
+        	}
         std::cout.flush();
         render();
     }
@@ -174,11 +205,10 @@ int main() {
     const std::string text = "#include <iostream>\n#include <ncurses.h>\n#include <unistd.h>\n\nint main() {\n    initscr();\n    noecho();\n    curs_set(FALSE);\n    mvchgat(0, 0, 1, A_REVERSE, 0, NULL);\n    mvchgat(0, 7, 1, A_REVERSE, 0, NULL);\n    refresh();\n\n    sleep(5);\n\n    endwin();\n}\n";
 
     ted ed(text);
-    char input;
-    while ((input = getch())) {
-        if (input == 'x') break;
-        // ed.render();
-        ed.handle_input(input);
+    while (true) {
+    	int length = getch();
+        if (buffer[0] == 'x') break;
+        ed.handle_input(length);
     }
     return 0;
 }
