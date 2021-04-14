@@ -18,6 +18,7 @@ const std::string DELIMITER = "\n";
 
 char buffer[buffer_size] = {0};
 
+
 int getch() {
     return read(0, &buffer, buffer_size);
 }
@@ -86,8 +87,10 @@ public:
 
     void render_cursels() {
         for (auto cur : cursels) {
+        	char substitute = lines[cur.l][cur.c];
+        	if (!substitute) substitute = ' ';
             std::cout << "\e[" << cur.l + 1 << ";" << cur.c + gap + 3 << "H";
-            std::cout << "\e[48;5;214m\e[38;5;16m" << lines[cur.l][cur.c] << "\e[0m";
+            std::cout << "\e[48;5;214m\e[38;5;16m" << substitute << "\e[0m";
         }
         std::cout.flush();
     }
@@ -102,16 +105,20 @@ public:
         for (auto &cur : cursels)
             switch(way) {
             case UP:
-                if (cur.l) cur.l--;
+                if (cur.l) --cur.l;
+                cur.c = std::min(lines[cur.l].size(), cur.hc);
                 break;
             case DOWN:
-                if (cur.l < lines.size()) cur.l++;
+                if (cur.l < lines.size() - 1) cur.l++;
+                cur.c = std::min(lines[cur.l].size(), cur.hc);
                 break;
             case LEFT:
                 if (cur.c) cur.c--;
+                cur.hc = cur.c;
                 break;
             case RIGHT:
                 if (cur.c < lines[cur.l].size()) cur.c++;
+                cur.hc = cur.c;
                 break;
             default:
                 write_message(std::string("unknown way to move ") + way);
@@ -125,7 +132,7 @@ public:
         for (size_t i=0; i < (size_t) nrows - 1; i++) {
             if (i < lines.size()) {
                 line_nb(std::to_string(i + 1));
-                std::cout << lines[i] << " \n";
+                std::cout << lines[i] << "  \n";
             } else {
                 line_nb(std::string());
                 std::cout << '\n';
@@ -141,6 +148,17 @@ public:
     	}
     }
 
+    void backspace() {
+    	for (auto & cur : cursels) {
+    		if (cur.c > 0)
+		    	lines[cur.l].erase(--cur.c, 1);
+		    else {
+
+		    }
+
+    	}
+    }
+
     void write_message(const std::string & msg) {
         std::cout << "\e[" << nrows << ";0H\e[0K";
         std::cout << msg;
@@ -151,8 +169,10 @@ public:
     		if (read_size == 3 && buffer[1] == '[') {
     			move_cursels(buffer[2]);
     		}
-    	} else if (buffer[0] == '\b') {
-
+    	} else if (buffer[0] == 127) {
+    		backspace();
+    	} else if (buffer[0] == '\n') {
+    		newline();
     	} else {
     		input(read_size);
     	}
@@ -186,10 +206,13 @@ public:
         			std::cout << "ESC";
         			break;
         		case '\b':
-        			std::cout << "ESC";
+        			std::cout << "DEL";
+        			break;
+        		case '\n':
+        			std::cout << "CR";
         			break;
         		default:
-        			std::cout << buffer[i];
+        			std::cout << +buffer[i];
         	}
         std::cout.flush();
         render();
