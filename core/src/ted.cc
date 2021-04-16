@@ -13,15 +13,20 @@
 #define LEFT 'D'
 
 constexpr size_t buffer_size = 1024;
-
+size_t gap = 3;
 const std::string DELIMITER = "\n";
+struct termios term = {0};
 
 char buffer[buffer_size] = {0};
+std::vector<std::string> lines;
+size_t lpos = 0;
+struct {
+	size_t l = 0;
+	size_t c = 0;
+} cursor;
+
 size_t nrows;
 size_t ncols;
-std::vector<std::string> lines;
-struct termios term = {0};
-size_t gap = 3;
 
 void close() {
     // restore normal mode
@@ -50,6 +55,8 @@ public:
 			if (way == UP && l) --l;
 			if (way == DOWN && l < lines.size() - 1) l++;
 			c = std::min(lines[l].size(), hc);
+			if (lpos > l) lpos = l;
+			if (lpos + nrows < l) lpos = l - nrows;
 		} else if (way == RIGHT || way == LEFT) {
 			if (way == LEFT && c) c--;
 			if (way == RIGHT && c < lines[l].size()) c++;
@@ -57,6 +64,7 @@ public:
 		} else {
 			close();
 			std::cout << "unknown way to move " << way << std::endl;
+			abort();
 		}
 	}
 
@@ -76,9 +84,10 @@ public:
 		if (c > 0) {
 			lines[l].erase(--c, 1);
 		} else if (l > 0) {
-			c = lines[--l].size();
-			lines[l] += lines[l + 1];
-			lines.erase(lines.begin() + l + 1);
+			c = lines[l].size();
+			lines[l - 1] += lines[l];
+			lines.erase(lines.begin() + l);
+			move(UP);
 		}
 	}
 
@@ -86,12 +95,12 @@ public:
 		lines.insert(lines.begin() + l + 1, lines[l].substr(c));
 		lines[l] = lines[l].substr(0, c);
 		c = 0;
-		l++;
+		move(DOWN);
 	}
 
 };
 
-std::vector<cursel> cursels;
+cursel cur(0, 0);
 
 
 void line_nb(std::string number) {
@@ -108,14 +117,14 @@ void render() {
     // print lines
 	for (size_t i=0; i < (size_t) nrows - 1; i++) {
 		if (i < lines.size()) {
-			line_nb(std::to_string(i + 1));
-			std::cout << lines[i] << "  \n";
+			line_nb(std::to_string(lpos + i + 1));
+			std::cout << lines[lpos + i] << "  \e[0K\n";
 		} else {
-			line_nb(std::string());
-			std::cout << '\n';
+			line_nb("");
+			std::cout << "\e[0K\n";
 		}
 	}
-	for (auto &cur : cursels) cur.render();
+	cur.render();
 	std::cout.flush();
 }
 
@@ -140,8 +149,6 @@ void init(std::string text) {
 		lines.emplace_back(text.substr(last, next-last));
 		last = next + 1;
 	}
-    // add one cursel
-	cursels.emplace_back(0, 0);
     // populate screen
 	render();
 }
@@ -153,14 +160,14 @@ int getch() {
 void handle_input(int read_size) {
 	if (buffer[0] == '\e') {
 		if (read_size == 3 && buffer[1] == '[') {
-			for (auto &cur : cursels) cur.move(buffer[2]);
+			cur.move(buffer[2]);
 		}
 	} else if (buffer[0] == 127) {
-		for (auto &cur : cursels) cur.backspace();
+		cur.backspace();
 	} else if (buffer[0] == '\n') {
-		for (auto &cur : cursels) cur.newline();
+		cur.newline();
 	} else {
-		for (auto &cur : cursels) cur.input(read_size);
+		cur.input(read_size);
 	}
 	std::cout << "\e[" << nrows << ";0H\e[0K";
 	for (int i=0; i < read_size; i++)
