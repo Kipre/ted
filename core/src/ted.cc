@@ -56,7 +56,7 @@ public:
 			if (way == DOWN && l < lines.size() - 1) l++;
 			c = std::min(lines[l].size(), hc);
 			if (lpos > l) lpos = l;
-			if (lpos + nrows < l) lpos = l - nrows;
+			if (lpos + nrows - 1 < l) lpos = l - nrows + 1;
 		} else if (way == RIGHT || way == LEFT) {
 			if (way == LEFT && c) c--;
 			if (way == RIGHT && c < lines[l].size()) c++;
@@ -71,7 +71,7 @@ public:
 	void render(){
 		char substitute = lines[l][c];
 		if (!substitute) substitute = ' ';
-		std::cout << "\e[" << l + 1 << ";" << c + gap + 3 << "H";
+		std::cout << "\e[" << l + 1 - lpos << ";" << c + gap + 3 << "H";
 		std::cout << "\e[48;5;214m\e[38;5;16m" << substitute << "\e[0m";
 	}
 
@@ -83,8 +83,10 @@ public:
 	void backspace() {
 		if (c > 0) {
 			lines[l].erase(--c, 1);
+			hc = c;
 		} else if (l > 0) {
-			c = lines[l].size();
+			c = lines[l - 1].size();
+			hc = c;
 			lines[l - 1] += lines[l];
 			lines.erase(lines.begin() + l);
 			move(UP);
@@ -95,6 +97,7 @@ public:
 		lines.insert(lines.begin() + l + 1, lines[l].substr(c));
 		lines[l] = lines[l].substr(0, c);
 		c = 0;
+		hc = c;
 		move(DOWN);
 	}
 
@@ -125,7 +128,27 @@ void render() {
 		}
 	}
 	cur.render();
-	std::cout.flush();
+
+	std::cout << "\e[" << nrows << ";0H\e[0K";
+	// for (int i=0; i < read_size; i++)
+	// 	switch(buffer[i]) {
+	// 		case '\e':
+	// 		std::cout << "ESC";
+	// 		break;
+	// 		case '\b':
+	// 		std::cout << "DEL";
+	// 		break;
+	// 		case '\n':
+	// 		std::cout << "CR";
+	// 		break;
+	// 		default:
+	// 		std::cout << +buffer[i];
+	// 	}
+	std::cout << " lpos=" << lpos;
+	std::cout << " l=" << cur.l;
+	std::cout << " c=" << cur.c;
+
+	std::cout.flush();	
 }
 
 void init(std::string text) {
@@ -169,22 +192,6 @@ void handle_input(int read_size) {
 	} else {
 		cur.input(read_size);
 	}
-	std::cout << "\e[" << nrows << ";0H\e[0K";
-	for (int i=0; i < read_size; i++)
-		switch(buffer[i]) {
-			case '\e':
-			std::cout << "ESC";
-			break;
-			case '\b':
-			std::cout << "DEL";
-			break;
-			case '\n':
-			std::cout << "CR";
-			break;
-			default:
-			std::cout << +buffer[i];
-		}
-	std::cout.flush();
 	render();
 }
 
