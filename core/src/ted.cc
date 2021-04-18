@@ -18,6 +18,7 @@ const std::string DELIMITER = "\n";
 struct termios term = {0};
 
 char buffer[buffer_size] = {0};
+int read_size = 0;
 std::vector<std::string> lines;
 size_t lpos = 0;
 struct {
@@ -54,9 +55,11 @@ public:
 		if (way == UP || way == DOWN) {
 			if (way == UP && l) --l;
 			if (way == DOWN && l < lines.size() - 1) l++;
+			// Allow for a little bit of overscroll
+			else if (way == DOWN && l == lines.size() - 1 && (int) lpos < (int) lines.size() - ((int) nrows / 2)) lpos++;
 			c = std::min(lines[l].size(), hc);
 			if (lpos > l) lpos = l;
-			if (lpos + nrows - 1 < l) lpos = l - nrows + 1;
+			if (lpos + nrows - 2 < l) lpos = l - nrows + 2;
 		} else if (way == RIGHT || way == LEFT) {
 			if (way == LEFT && c) c--;
 			if (way == RIGHT && c < lines[l].size()) c++;
@@ -119,7 +122,7 @@ void render() {
 	std::cout << "\e[H";
     // print lines
 	for (size_t i=0; i < (size_t) nrows - 1; i++) {
-		if (i < lines.size()) {
+		if (lpos + i < lines.size()) {
 			line_nb(std::to_string(lpos + i + 1));
 			std::cout << lines[lpos + i] << "  \e[0K\n";
 		} else {
@@ -130,23 +133,24 @@ void render() {
 	cur.render();
 
 	std::cout << "\e[" << nrows << ";0H\e[0K";
-	// for (int i=0; i < read_size; i++)
-	// 	switch(buffer[i]) {
-	// 		case '\e':
-	// 		std::cout << "ESC";
-	// 		break;
-	// 		case '\b':
-	// 		std::cout << "DEL";
-	// 		break;
-	// 		case '\n':
-	// 		std::cout << "CR";
-	// 		break;
-	// 		default:
-	// 		std::cout << +buffer[i];
-	// 	}
-	std::cout << " lpos=" << lpos;
-	std::cout << " l=" << cur.l;
-	std::cout << " c=" << cur.c;
+	for (int i=0; i < read_size; i++)
+		switch(buffer[i]) {
+			case '\e':
+			std::cout << "ESC";
+			break;
+			case '\b':
+			std::cout << "DEL";
+			break;
+			case '\n':
+			std::cout << "CR";
+			break;
+			default:
+			std::cout << " " << +buffer[i] << "=" << buffer[i];
+		}
+	// std::cout << " lpos=" << lpos;
+	// std::cout << " l=" << cur.l;
+	// std::cout << " c=" << cur.c;
+	// std::cout << " lines.size() - (nrows / 2)=" << (int) lines.size() - ((int) nrows / 2);
 
 	std::cout.flush();	
 }
@@ -176,11 +180,11 @@ void init(std::string text) {
 	render();
 }
 
-int getch() {
-	return read(0, &buffer, buffer_size);
+void getch() {
+	read_size = read(0, &buffer, buffer_size);
 }
 
-void handle_input(int read_size) {
+void handle_input() {
 	if (buffer[0] == '\e') {
 		if (read_size == 3 && buffer[1] == '[') {
 			cur.move(buffer[2]);
@@ -196,14 +200,14 @@ void handle_input(int read_size) {
 }
 
 
-int main() {
+int main(int argc, char* argv[]) {
 	const std::string text = "#include <iostream>\n#include <ncurses.h>\n#include <unistd.h>\n\nint main() {\n    initscr();\n    noecho();\n    curs_set(FALSE);\n    mvchgat(0, 0, 1, A_REVERSE, 0, NULL);\n    mvchgat(0, 7, 1, A_REVERSE, 0, NULL);\n    refresh();\n\n    sleep(5);\n\n    endwin();\n}\n";
 
 	init(text);
 	while (true) {
-		int length = getch();
+		getch();
 		if (buffer[0] == 'x') break;
-		handle_input(length);
+		handle_input();
 	}
 
 	close();
