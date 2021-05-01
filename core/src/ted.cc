@@ -21,10 +21,6 @@ char buffer[buffer_size] = {0};
 int read_size = 0;
 std::vector<std::string> lines;
 size_t lpos = 0;
-struct {
-	size_t l = 0;
-	size_t c = 0;
-} cursor;
 
 size_t nrows;
 size_t ncols;
@@ -108,7 +104,6 @@ public:
 
 cursel cur(0, 0);
 
-
 void line_nb(std::string number) {
 	std::cout << "\e[38;5;237m" << std::setw(gap) << number << " |\e[0m";
 }
@@ -147,11 +142,6 @@ void render() {
 			default:
 			std::cout << " " << +buffer[i] << "=" << buffer[i];
 		}
-	// std::cout << " lpos=" << lpos;
-	// std::cout << " l=" << cur.l;
-	// std::cout << " c=" << cur.c;
-	// std::cout << " lines.size() - (nrows / 2)=" << (int) lines.size() - ((int) nrows / 2);
-
 	std::cout.flush();	
 }
 
@@ -186,9 +176,8 @@ void getch() {
 
 void handle_input() {
 	if (buffer[0] == '\e') {
-		if (read_size == 3 && buffer[1] == '[') {
+		if (read_size == 3 && buffer[1] == '[')
 			cur.move(buffer[2]);
-		}
 	} else if (buffer[0] == 127) {
 		cur.backspace();
 	} else if (buffer[0] == '\n') {
@@ -201,12 +190,13 @@ void handle_input() {
 
 
 int main(int argc, char* argv[]) {
+	
 	const std::string text = "#include <iostream>\n#include <ncurses.h>\n#include <unistd.h>\n\nint main() {\n    initscr();\n    noecho();\n    curs_set(FALSE);\n    mvchgat(0, 0, 1, A_REVERSE, 0, NULL);\n    mvchgat(0, 7, 1, A_REVERSE, 0, NULL);\n    refresh();\n\n    sleep(5);\n\n    endwin();\n}\n";
 
 	init(text);
 	while (true) {
 		getch();
-		if (buffer[0] == 'x') break;
+		if (read_size == 1 && buffer[0] == '\e') break;
 		handle_input();
 	}
 
