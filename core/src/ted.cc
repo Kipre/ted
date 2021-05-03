@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <fstream>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <termios.h>
@@ -16,6 +17,7 @@ constexpr size_t buffer_size = 1024;
 size_t gap = 3;
 const std::string DELIMITER = "\n";
 struct termios term = {0};
+char * filename;
 
 char buffer[buffer_size] = {0};
 int read_size = 0;
@@ -174,10 +176,19 @@ void getch() {
 	read_size = read(0, &buffer, buffer_size);
 }
 
+void save() {
+	std::ofstream t(filename);
+	for (auto line : lines)
+		t << line << '\n';
+	t.close();
+}
+
 void handle_input() {
 	if (buffer[0] == '\e') {
 		if (read_size == 3 && buffer[1] == '[')
 			cur.move(buffer[2]);
+		else if (read_size == 2 && buffer[1] == 1)
+			save();
 	} else if (buffer[0] == 127) {
 		cur.backspace();
 	} else if (buffer[0] == '\n') {
@@ -190,10 +201,14 @@ void handle_input() {
 
 
 int main(int argc, char* argv[]) {
-	
-	const std::string text = "#include <iostream>\n#include <ncurses.h>\n#include <unistd.h>\n\nint main() {\n    initscr();\n    noecho();\n    curs_set(FALSE);\n    mvchgat(0, 0, 1, A_REVERSE, 0, NULL);\n    mvchgat(0, 7, 1, A_REVERSE, 0, NULL);\n    refresh();\n\n    sleep(5);\n\n    endwin();\n}\n";
+	if (argc < 2) return 0;
+	filename = argv[1];
+  	std::ifstream t(filename);
+	std::stringstream ibuf;
+	ibuf << t.rdbuf();
+	t.close();
 
-	init(text);
+    init(ibuf.str());
 	while (true) {
 		getch();
 		if (read_size == 1 && buffer[0] == '\e') break;
