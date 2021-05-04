@@ -168,6 +168,7 @@ void init(std::string text) {
 		lines.emplace_back(text.substr(last, next-last));
 		last = next + 1;
 	}
+	lines.emplace_back(text.substr(last, text.size()-last));
     // populate screen
 	render();
 }
