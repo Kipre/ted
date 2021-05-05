@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <fstream>
+#include <cctype>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <termios.h>
@@ -54,7 +55,7 @@ public:
 			if (way == UP && l) --l;
 			if (way == DOWN && l < lines.size() - 1) l++;
 			// Allow for a little bit of overscroll
-			else if (way == DOWN && l == lines.size() - 1 && (int) lpos < (int) lines.size() - ((int) nrows / 2)) lpos++;
+			else if (way == DOWN && l == lines.size() - 1 && (int) lpos < (int) lines.size() - ((int) nrows / 3)) lpos++;
 			c = std::min(lines[l].size(), hc);
 			if (lpos > l) lpos = l;
 			if (lpos + nrows - 2 < l) lpos = l - nrows + 2;
@@ -77,7 +78,9 @@ public:
 	}
 
 	void input(int length) {
-		lines[l].insert(c, buffer, length);
+		std::string str(buffer, length);
+    	str.erase(remove_if(str.begin(),str.end(), isascii), str.end());
+		lines[l].insert(c, str);
 		c += length;
 	}
 
@@ -194,6 +197,8 @@ void handle_input() {
 		cur.backspace();
 	} else if (buffer[0] == '\n') {
 		cur.newline();
+	} else if (buffer[0] < 0) {
+
 	} else {
 		cur.input(read_size);
 	}
