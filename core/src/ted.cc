@@ -1,3 +1,4 @@
+
 #include <vector>
 #include <string>
 #include <iostream>
@@ -5,6 +6,8 @@
 #include <iomanip>
 #include <fstream>
 #include <cctype>
+#include <algorithm>
+#include <unordered_set>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <termios.h>
@@ -14,19 +17,27 @@
 #define RIGHT 'C'
 #define LEFT 'D'
 
+/* constants */
 constexpr size_t buffer_size = 1024;
-size_t gap = 3;
+const std::unordered_set<char> invalid ( {'\r'} );
 const std::string DELIMITER = "\n";
+
+/* ui settings */
+size_t gap = 3;
 struct termios term = {0};
 char * filename;
 
+/* app state */
 char buffer[buffer_size] = {0};
 int read_size = 0;
 std::vector<std::string> lines;
 size_t lpos = 0;
-
 size_t nrows;
 size_t ncols;
+
+bool char_invalid(char c) {
+	return !isascii(c) || invalid.contains(c);
+}
 
 void close() {
     // restore normal mode
@@ -55,7 +66,7 @@ public:
 			if (way == UP && l) --l;
 			if (way == DOWN && l < lines.size() - 1) l++;
 			// Allow for a little bit of overscroll
-			else if (way == DOWN && l == lines.size() - 1 && (int) lpos < (int) lines.size() - ((int) nrows / 3)) lpos++;
+			else if (way == DOWN && l == lines.size() - 1 && (int) lpos < (int) lines.size() - ((int) nrows * 2 / 3)) lpos++;
 			c = std::min(lines[l].size(), hc);
 			if (lpos > l) lpos = l;
 			if (lpos + nrows - 2 < l) lpos = l - nrows + 2;
@@ -79,7 +90,7 @@ public:
 
 	void input(int length) {
 		std::string str(buffer, length);
-    	str.erase(remove_if(str.begin(),str.end(), isascii), str.end());
+		str.erase(std::remove_if(str.begin(), str.end(), char_invalid));
 		lines[l].insert(c, str);
 		c += length;
 	}
@@ -151,6 +162,7 @@ void render() {
 }
 
 void init(std::string text) {
+	text.erase(std::remove_if(text.begin(), text.end(), char_invalid));
     // get viewport size
 	struct winsize w;
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
