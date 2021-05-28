@@ -76,6 +76,7 @@ export class State {
         const tab = ' '.repeat(config.tabSize);
         let text = await file.text();
         text = text.replaceAll(/\t/gm, tab);
+        text = text.replaceAll(/\r/gm, '');
         self.lines = text.split('\n');
         self.language = languageFromName(handle.name);
         self.saved = true;
